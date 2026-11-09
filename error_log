@@ -1,0 +1,40 @@
+[26-Aug-2026 04:36:12 Europe/Prague] PHP Fatal error:  Uncaught Error: Class "App\Core\Response" not found in /home2/lauhannq/e-commerce.freshcrackers.cz/public/index.php:29
+Stack trace:
+#0 /home2/lauhannq/e-commerce.freshcrackers.cz/api.php(6): require()
+#1 {main}
+  thrown in /home2/lauhannq/e-commerce.freshcrackers.cz/public/index.php on line 29
+[26-Aug-2026 04:36:16 Europe/Prague] PHP Fatal error:  Uncaught Error: Class "App\Core\Response" not found in /home2/lauhannq/e-commerce.freshcrackers.cz/public/index.php:29
+Stack trace:
+#0 /home2/lauhannq/e-commerce.freshcrackers.cz/api.php(6): require()
+#1 {main}
+  thrown in /home2/lauhannq/e-commerce.freshcrackers.cz/public/index.php on line 29
+[26-Aug-2026 04:37:22 Europe/Prague] PHP Fatal error:  Uncaught Error: Class "App\Core\Response" not found in /home2/lauhannq/e-commerce.freshcrackers.cz/public/index.php:29
+Stack trace:
+#0 /home2/lauhannq/e-commerce.freshcrackers.cz/api.php(6): require()
+#1 {main}
+  thrown in /home2/lauhannq/e-commerce.freshcrackers.cz/public/index.php on line 29
+[26-Aug-2026 04:37:26 Europe/Prague] PHP Fatal error:  Uncaught Error: Class "App\Core\Response" not found in /home2/lauhannq/e-commerce.freshcrackers.cz/public/index.php:29
+Stack trace:
+#0 /home2/lauhannq/e-commerce.freshcrackers.cz/api.php(6): require()
+#1 {main}
+  thrown in /home2/lauhannq/e-commerce.freshcrackers.cz/public/index.php on line 29
+[26-Aug-2026 04:40:33 Europe/Prague] PHP Fatal error:  Uncaught Error: Class "App\Core\Response" not found in /home2/lauhannq/e-commerce.freshcrackers.cz/public/index.php:29
+Stack trace:
+#0 /home2/lauhannq/e-commerce.freshcrackers.cz/api.php(6): require()
+#1 {main}
+  thrown in /home2/lauhannq/e-commerce.freshcrackers.cz/public/index.php on line 29
+[26-Aug-2026 04:40:42 Europe/Prague] PHP Fatal error:  Uncaught Error: Class "App\Core\Response" not found in /home2/lauhannq/e-commerce.freshcrackers.cz/public/index.php:29
+Stack trace:
+#0 /home2/lauhannq/e-commerce.freshcrackers.cz/api.php(6): require()
+#1 {main}
+  thrown in /home2/lauhannq/e-commerce.freshcrackers.cz/public/index.php on line 29
+[26-Aug-2026 04:42:06 Europe/Prague] PHP Fatal error:  Uncaught Error: Class "App\Core\Response" not found in /home2/lauhannq/e-commerce.freshcrackers.cz/public/index.php:29
+Stack trace:
+#0 /home2/lauhannq/e-commerce.freshcrackers.cz/api.php(6): require()
+#1 {main}
+  thrown in /home2/lauhannq/e-commerce.freshcrackers.cz/public/index.php on line 29
+[26-Aug-2026 04:44:18 Europe/Prague] PHP Fatal error:  Uncaught Error: Class "App\Core\Response" not found in /home2/lauhannq/e-commerce.freshcrackers.cz/public/index.php:29
+Stack trace:
+#0 /home2/lauhannq/e-commerce.freshcrackers.cz/api.php(6): require()
+#1 {main}
+  thrown in /home2/lauhannq/e-commerce.freshcrackers.cz/public/index.php on line 29

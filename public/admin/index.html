@@ -1,0 +1,2454 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Viki 0.8.2 · správa produktů</title>
+  <link rel="icon" type="image/png" href="https://www.freshcrackers.cz/wp-content/uploads/2023/10/icon-FC.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .dragging { opacity: 0.5; }
+    .line-clamp-1 { overflow: hidden; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; }
+    .splitter { width: 10px; cursor: col-resize; background: linear-gradient(to right, transparent 0, transparent 3px, #e5e5e5 3px, #e5e5e5 7px, transparent 7px); }
+    .splitter:hover, .splitter.is-dragging { background: linear-gradient(to right, transparent 0, transparent 2px, #a3a3a3 2px, #a3a3a3 8px, transparent 8px); }
+    .select-none-force, .select-none-force * { user-select: none !important; }
+    .wysiwyg-editor[contenteditable="true"]:empty:before { content: attr(data-placeholder); color:#a3a3a3; }
+    .editor-toolbar button.active { background:#171717; color:#fff; border-color:#171717; }
+    :root { --viki-green:#9fc51b; --viki-pink:#f5a8c4; --viki-black:#111; }
+    body { font-family:Poppins,system-ui,sans-serif; }
+    .viki-primary { background:var(--viki-black); color:#fff; }
+    .viki-primary:hover { background:#292929; }
+    .viki-nav-item { display:flex; align-items:center; gap:.7rem; width:100%; padding:.7rem .85rem; border-radius:.8rem; font-size:.82rem; color:#d4d4d4; }
+    .viki-nav-item:hover,.viki-nav-item.active { color:#fff; background:#292929; }
+    .viki-nav-item.active { box-shadow:inset 3px 0 0 var(--viki-green); }
+    .login-stage { min-height:100vh; padding:40px 24px; display:flex; align-items:center; justify-content:center; background:radial-gradient(circle at 14% 8%,rgba(62,207,153,.22),transparent 32%),radial-gradient(circle at 86% 18%,rgba(177,234,74,.28),transparent 30%),#f6fbf8; }
+    .login-layout { width:min(1240px,100%); display:grid; grid-template-columns:minmax(0,1.55fr) minmax(360px,.75fr); gap:32px; align-items:center; }
+    .viki-hero { position:relative; overflow:hidden; min-height:760px; padding:34px; border:1px solid #d7e4c2; border-radius:34px; background:linear-gradient(145deg,#fff 0%,#f7fff9 53%,#e9fff2 100%); box-shadow:0 24px 70px rgba(17,64,40,.10); display:flex; flex-direction:column; }
+    .viki-hero:after { content:""; position:absolute; width:330px; height:330px; right:-120px; top:-120px; border-radius:50%; background:rgba(123,220,165,.18); }
+    .hero-logo { width:168px; height:78px; object-fit:contain; object-position:left center; position:relative; z-index:2; }
+    .hero-image-wrap { position:relative; z-index:2; height:430px; display:flex; justify-content:center; align-items:center; margin:0 0 8px; }
+    .hero-image-wrap img { max-width:100%; max-height:100%; object-fit:contain; filter:drop-shadow(0 22px 28px rgba(12,48,31,.16)); }
+    .hero-copy { position:relative; z-index:2; max-width:780px; }
+    .hero-copy h1 { margin:12px 0 12px; font-size:clamp(34px,4vw,55px); line-height:1.05; letter-spacing:-.045em; color:#0d1723; font-weight:700; }
+    .hero-copy p { color:#466052; font-size:16px; line-height:1.65; max-width:760px; }
+    .feature-chips { display:flex; flex-wrap:wrap; gap:10px; margin-top:20px; }
+    .feature-chip { border:1px solid #d8e5bd; border-radius:999px; background:rgba(255,255,255,.8); color:#138044; padding:9px 14px; font-size:13px; font-weight:600; }
+    .login-card { background:rgba(255,255,255,.96); border:1px solid #dbe4ce; border-radius:30px; padding:34px; box-shadow:0 22px 65px rgba(17,64,40,.11); }
+    .login-badge { display:inline-flex; padding:7px 13px; border-radius:999px; background:#effbdc; border:1px solid #cfe69c; color:#4d7200; font-size:12px; font-weight:700; }
+    .login-card h2 { margin:12px 0 8px; font-size:36px; line-height:1.1; letter-spacing:-.04em; color:#0d1723; font-weight:700; }
+    .login-input { width:100%; border:1px solid #cfdbc7; background:#edf4ff; border-radius:16px; padding:14px 15px; outline:none; transition:.15s ease; }
+    .login-input:focus { border-color:#86b900; box-shadow:0 0 0 4px rgba(159,197,27,.16); }
+    .login-submit { width:100%; border-radius:999px; padding:14px 18px; background:linear-gradient(90deg,#11b565,#07904c); color:white; font-weight:700; box-shadow:0 12px 28px rgba(7,144,76,.2); }
+    .login-submit:hover { filter:brightness(.96); }
+    .login-submit:disabled { opacity:.65; cursor:wait; }
+    .login-alert { border:1px solid #fecaca; background:#fff1f2; color:#b42318; border-radius:14px; padding:12px 14px; line-height:1.45; }
+    .login-footer { color:#7a8b82; font-size:12px; text-align:center; margin-top:20px; }
+    @media (max-width:1100px) {
+      #appNavigation { position:fixed; z-index:70; left:0; top:0; bottom:0; transform:translateX(-100%); transition:transform .2s ease; box-shadow:0 16px 40px #0004; }
+      #appNavigation.mobile-open { transform:translateX(0); }
+      #navToggleBtn { display:inline-flex !important; }
+      #catalogSidebar { width:280px !important; min-width:240px !important; }
+      footer { overflow:auto; }
+    }
+    @media (max-width:760px) {
+      .login-stage { padding:0; align-items:stretch; }
+      .login-layout { display:block; }
+      .viki-hero { min-height:auto; padding:24px 20px 28px; border:0; border-radius:0; box-shadow:none; }
+      .hero-logo { width:132px; height:56px; }
+      .hero-image-wrap { height:270px; margin-top:-4px; }
+      .hero-copy h1 { font-size:34px; }
+      .hero-copy p { font-size:14px; }
+      .login-card { border-radius:28px 28px 0 0; border-left:0; border-right:0; border-bottom:0; box-shadow:0 -16px 44px rgba(17,64,40,.10); padding:28px 20px 34px; }
+      .login-card h2 { font-size:32px; }
+      #catalogSidebar { display:none; position:fixed; z-index:60; inset:64px 0 0 0; width:100% !important; max-width:none !important; }
+      #catalogSidebar.mobile-open { display:flex; }
+      #catalogSplitter { display:none; }
+      #catalogContent > div:first-child { align-items:flex-start; flex-direction:column; }
+      #catalogContent > div:first-child > div:last-child { width:100%; flex-wrap:wrap; }
+      #productSearch { flex:1; min-width:170px; }
+      #appView > header { padding-left:.75rem; padding-right:.75rem; }
+      #appView > footer { display:block; padding:.75rem; }
+      #appView > footer > div:last-child { margin-top:.75rem; min-width:680px; }
+      .modal-shell { max-width:none !important; width:100% !important; height:100% !important; border-radius:0 !important; }
+    }
+    @media (min-width:761px) and (max-width:1000px) {
+      .login-layout { grid-template-columns:1fr; max-width:760px; }
+      .viki-hero { min-height:auto; }
+      .hero-image-wrap { height:350px; }
+    }
+  </style>
+</head>
+<body class="bg-neutral-100 text-neutral-800 min-h-screen">
+  <div id="toastWrap" class="fixed top-4 right-4 z-[80] space-y-2"></div>
+
+  <div id="loginView" class="login-stage">
+    <div class="login-layout">
+      <section class="viki-hero" aria-label="Co umí Viki">
+        <img src="https://www.freshcrackers.cz/wp-content/uploads/2023/10/logo-FreshCrackers-1024x502-1.png" alt="Fresh Crackers" class="hero-logo" />
+        <div class="hero-image-wrap">
+          <img src="https://www.freshcrackers.cz/wp-content/uploads/2026/08/viki.png" alt="Viki – virtuální produktová specialistka" />
+        </div>
+        <div class="hero-copy">
+          <span class="login-badge">Fresh AI Commerce</span>
+          <h1>Tisíce produktů.<br>Jeden přehled. Viki.</h1>
+          <p>Viki je virtuální pracovnice pro produktová data v e-commerce. Pomůže ti spravovat katalogy několika e-shopů, bezpečně převádět data, hlídat varianty a udržovat WooCommerce synchronizovaný bez každodenního chaosu.</p>
+          <div class="feature-chips" aria-label="Hlavní funkce Viki">
+            <span class="feature-chip">Správa katalogu</span>
+            <span class="feature-chip">Importy a exporty</span>
+            <span class="feature-chip">Varianty a sklad</span>
+            <span class="feature-chip">WooCommerce sync</span>
+          </div>
+          <p class="mt-4 text-sm">Další etapa přidá AI tvorbu a úpravu produktových popisů, kontrolu kvality dat a automatické úkoly Viki.</p>
+        </div>
+      </section>
+
+      <section class="login-card">
+        <span class="login-badge">Přihlášení</span>
+        <h2>Vítej zpět</h2>
+        <p class="text-neutral-500 leading-relaxed">Přihlas se do Viki a pokračuj ve správě produktů.</p>
+        <div class="mt-7 space-y-4">
+          <div>
+            <label class="block text-sm font-semibold mb-2" for="email">E-mail</label>
+            <input id="email" class="login-input" type="email" autocomplete="username" placeholder="vas@email.cz" />
+          </div>
+          <div>
+            <label class="block text-sm font-semibold mb-2" for="password">Heslo</label>
+            <div class="flex gap-2">
+              <input id="password" class="login-input min-w-0" type="password" autocomplete="current-password" />
+              <button id="togglePasswordBtn" type="button" class="shrink-0 px-3 rounded-2xl border border-[#cfdbc7] bg-[#f4fbf6] text-sm font-semibold text-[#138044]">Zobrazit</button>
+            </div>
+          </div>
+          <button id="loginBtn" class="login-submit">Přihlásit</button>
+          <div id="loginError" class="login-alert hidden text-sm" role="alert"></div>
+          <div id="loginStatus" class="hidden text-xs text-neutral-500 text-center"></div>
+        </div>
+        <div class="login-footer">Viki 0.8.2 · Produktová specialistka Fresh Crackers</div>
+      </section>
+    </div>
+  </div>
+
+  <div id="appView" class="hidden h-screen overflow-hidden flex flex-col">
+    <header class="h-16 shrink-0 bg-white border-b border-neutral-200 px-5 flex items-center justify-between">
+      <div id="activeStoreBrand" class="flex items-center gap-3 min-w-0">
+        <button id="navToggleBtn" class="hidden h-10 w-10 items-center justify-center rounded-xl border border-neutral-300" aria-label="Otevřít navigaci">☰</button>
+        <div id="activeStoreBrandLogoWrap" class="hidden shrink-0">
+          <img
+            id="activeStoreBrandLogo"
+            src=""
+            alt="Logo e-shopu"
+            class="h-10 max-w-[220px] object-contain"
+          />
+        </div>
+
+        <div id="activeStoreBrandText" class="min-w-0">
+          <div class="text-xs uppercase tracking-[0.2em] text-neutral-400">Viki 0.8.2</div>
+          <h1 class="text-lg font-semibold">Správa produktů</h1>
+        </div>
+      </div>
+      <div class="flex items-center gap-2 text-sm">
+        <span id="userBadge" class="hidden md:inline text-neutral-500 mr-2"></span>
+        <select id="storeSelect" class="rounded-lg border border-neutral-300 px-3 py-2 bg-white max-w-[220px]"></select>
+        <button id="backupBtn" class="hidden px-3 py-2 rounded-lg border border-neutral-300 bg-white hover:bg-neutral-50">Záloha</button>
+        <button id="restoreBtn" class="hidden px-3 py-2 rounded-lg border border-neutral-300 bg-white hover:bg-neutral-50">Obnovit</button>
+        <button id="importBtn" class="hidden px-3 py-2 rounded-lg border border-neutral-300 bg-white hover:bg-neutral-50">Import Woo XML</button>
+        <input id="importFile" type="file" accept=".xml,.wxr,text/xml,application/xml" class="hidden" />
+        <button id="refreshBtn" class="px-3 py-2 rounded-lg border border-neutral-300 bg-white hover:bg-neutral-50">Obnovit data</button>
+        <a href="./account.html" id="accountBtn" class="px-3 py-2 rounded-lg border border-neutral-300 bg-white hover:bg-neutral-50 inline-flex items-center gap-2" title="Nastavení účtu" aria-label="Nastavení účtu"><span>⚙</span><span class="hidden md:inline">Účet</span></a>
+        <button id="logoutBtn" class="px-3 py-2 rounded-lg bg-neutral-900 text-white hover:bg-black">Odhlásit</button>
+      </div>
+    </header>
+
+    <main class="flex-1 min-h-0 flex">
+      <aside id="appNavigation" class="w-[220px] shrink-0 bg-neutral-950 text-white p-3 flex flex-col">
+        <div class="flex items-center gap-3 px-2 pt-2 pb-5 border-b border-white/10">
+          <img src="https://www.freshcrackers.cz/wp-content/uploads/2026/08/viki.png" alt="Viki" class="h-12 w-12 rounded-2xl object-cover bg-white/10" />
+          <div><div class="font-semibold">Viki</div><div class="text-[11px] text-neutral-400">Produktový pracovník</div></div>
+        </div>
+        <nav class="py-4 space-y-1">
+          <button class="viki-nav-item" id="overviewNavBtn"><span>⌂</span><span>Přehled</span></button>
+          <button class="viki-nav-item active"><span>▦</span><span>Produkty</span></button>
+          <button class="viki-nav-item" id="categoriesNavBtn"><span>⌗</span><span>Kategorie</span></button>
+          <a class="viki-nav-item" href="./account.html#stores"><span>⇅</span><span>Importy / exporty</span></a>
+          <a class="viki-nav-item" href="./account.html#stores"><span>⌁</span><span>Konektory</span></a>
+          <a class="viki-nav-item" href="./account.html#users"><span>♙</span><span>Oprávnění</span></a>
+          <a class="viki-nav-item" href="./account.html#profile"><span>⚙</span><span>Nastavení</span></a>
+        </nav>
+        <div class="mt-auto rounded-2xl bg-white/10 p-3 text-xs text-neutral-300">
+          <div class="font-medium text-white">Viki radí</div>
+          <div class="mt-1">Importy a zálohy najdeš u konektorů. AI tvorba textů přijde v další etapě.</div>
+        </div>
+      </aside>
+      <aside id="catalogSidebar" class="shrink-0 bg-white border-r border-neutral-200 flex flex-col" style="width:340px; min-width:260px; max-width:720px;">
+        <div class="px-4 pt-3 pb-2 border-b border-neutral-200 flex items-center justify-between gap-2 text-xs text-neutral-500">
+          <span>Panel kategorií</span>
+          <span id="sidebarWidthLabel">340 px</span>
+        </div>
+        <div class="p-4 border-b border-neutral-200">
+          <div class="flex items-center justify-between mb-3">
+            <div>
+              <h2 class="font-semibold text-sm">Kategorie</h2>
+              <p class="text-xs text-neutral-500">Strom kategorií s editací a přesuny</p>
+            </div>
+            <button id="newRootCategoryBtn" class="px-3 py-2 text-sm rounded-lg border border-neutral-300 hover:bg-neutral-50">+ Kategorie</button>
+          </div>
+          <div class="relative">
+            <input id="categorySearch" class="w-full rounded-xl border border-neutral-300 bg-neutral-50 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-neutral-300" placeholder="Hledat kategorii..." />
+          </div>
+        </div>
+        <div class="flex-1 min-h-0 overflow-auto p-3">
+          <div id="categoryTree"></div>
+        </div>
+      </aside>
+
+      <div id="catalogSplitter" class="splitter shrink-0" title="Přetažením změň šířku panelu kategorií"></div>
+
+      <section id="catalogContent" class="flex-1 min-w-0 flex flex-col">
+        <div class="bg-white border-b border-neutral-200 px-5 py-4 flex items-center justify-between gap-4">
+          <div>
+            <div class="text-xs uppercase tracking-wide text-neutral-400">Vybraná kategorie</div>
+            <div id="selectedCategoryTitle" class="text-lg font-semibold">Všechny produkty</div>
+            <div id="selectedCategoryMeta" class="text-sm text-neutral-500">Klikni na kategorii vlevo pro filtraci.</div>
+          </div>
+          <div class="flex items-center gap-2">
+            <input id="productSearch" class="rounded-xl border border-neutral-300 px-3 py-2 text-sm bg-white" placeholder="Hledat produkt / SKU..." />
+            <button id="clearCategoryFilterBtn" class="px-3 py-2 text-sm rounded-lg border border-neutral-300 hover:bg-neutral-50">Zobrazit vše</button>
+            <button id="newProductBtn" class="px-3 py-2 text-sm rounded-lg bg-neutral-900 text-white hover:bg-black">Nový produkt</button>
+          </div>
+        </div>
+
+        <div id="bulkToolbar" class="hidden bg-neutral-900 text-white px-5 py-3 flex items-center justify-between">
+          <div class="text-sm"><span id="bulkCount">0</span> vybraných produktů</div>
+          <div class="flex items-center gap-2">
+            <select id="bulkCategorySelect" class="px-3 py-2 text-sm rounded-lg text-neutral-900 bg-white border border-neutral-300"></select>
+            <button id="bulkMoveBtn" class="px-3 py-2 text-sm rounded-lg bg-white text-neutral-900 hover:bg-neutral-100">Přesunout</button>
+            <button id="bulkSyncWooBtn" class="px-3 py-2 text-sm rounded-lg bg-amber-300 text-neutral-900 hover:bg-amber-200">Sync do Woo</button>
+            <button id="bulkDeleteBtn" class="px-3 py-2 text-sm rounded-lg border border-white/30 hover:bg-white/10">Smazat</button>
+            <button id="bulkClearBtn" class="px-3 py-2 text-sm rounded-lg border border-white/30 hover:bg-white/10">Zrušit výběr</button>
+          </div>
+        </div>
+
+        <div class="p-5 flex-1 min-h-0 overflow-auto">
+          <div class="bg-white border border-neutral-200 rounded-2xl overflow-hidden shadow-sm">
+            <div class="grid gap-3 px-4 py-3 border-b border-neutral-200 text-xs font-semibold uppercase tracking-wide text-neutral-500 bg-neutral-50 items-center" style="grid-template-columns: 42px minmax(280px,2.2fr) 70px 120px 90px 110px 90px minmax(160px,1.1fr) 130px 210px;">
+              <div><input id="selectAllProducts" type="checkbox" class="rounded border-neutral-300"></div>
+              <div>Produkt</div>
+              <div>ID</div>
+              <div>SKU</div>
+              <div>Typ</div>
+              <div>Cena</div>
+              <div>Sklad</div>
+              <div>Kategorie</div>
+              <div>Woo sync</div>
+              <div class="text-right">Akce</div>
+            </div>
+            <div id="productRows" class="divide-y divide-neutral-200"></div>
+          </div>
+        </div>
+      </section>
+    </main>
+    <footer class="shrink-0 bg-white border-t border-neutral-200 px-5 py-3 flex items-center justify-between gap-4">
+      <div class="flex items-center gap-3 min-w-0">
+        <img src="https://www.freshcrackers.cz/wp-content/uploads/2023/10/logo-FreshCrackers-1024x502-1.png" alt="Fresh Crackers" class="h-10 w-24 object-contain" />
+        <div class="min-w-0">
+          <div class="font-medium">Viki 0.8.2</div>
+          <div class="text-sm text-neutral-500 truncate">Produktový pracovník od Fresh Crackers</div>
+        </div>
+      </div>
+      <div class="flex items-center gap-5 text-sm text-neutral-600">
+        <div class="text-right">
+          <div><strong id="footerTotalProducts">0</strong> produktů v katalogu</div>
+          <div><strong id="footerFilteredProducts">0</strong> po filtrování / vyhledávání · <strong id="footerVisibleProducts">0</strong> na stránce</div>
+        </div>
+        <div class="flex items-center gap-2">
+          <label class="text-sm text-neutral-500">Na stránku</label>
+          <select id="pageSizeSelect" class="rounded-lg border border-neutral-300 px-3 py-2 bg-white">
+            <option value="25">25</option>
+            <option value="50" selected>50</option>
+            <option value="100">100</option>
+            <option value="200">200</option>
+          </select>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="text-sm text-neutral-500">Navigace</span>
+          <button id="paginationPrevBtn" class="px-3 py-2 rounded-lg border border-neutral-300 bg-white hover:bg-neutral-50">←</button>
+          <div id="paginationLabel" class="min-w-[130px] text-center text-sm text-neutral-700">Strana 1 / 1</div>
+          <button id="paginationNextBtn" class="px-3 py-2 rounded-lg border border-neutral-300 bg-white hover:bg-neutral-50">→</button>
+        </div>
+      </div>
+    </footer>
+
+  </div>
+
+  <div id="confirmModal" class="hidden fixed inset-0 bg-black/40 items-center justify-center p-4 z-[80]">
+    <div class="bg-white w-full max-w-md rounded-2xl shadow-xl border border-neutral-200">
+      <div class="px-5 py-4 border-b border-neutral-200">
+        <h3 id="confirmTitle" class="font-semibold text-lg">Potvrzení</h3>
+      </div>
+      <div class="px-5 py-4 text-sm text-neutral-700" id="confirmMessage"></div>
+      <div class="px-5 py-4 border-t border-neutral-200 flex justify-end gap-2">
+        <button onclick="closeConfirmModal()" class="px-3 py-2 text-sm rounded-lg border border-neutral-300 hover:bg-neutral-50">Zrušit</button>
+        <button id="confirmOkBtn" class="px-3 py-2 text-sm rounded-lg bg-red-600 text-white hover:bg-red-700">Potvrdit</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="importModal" class="hidden fixed inset-0 bg-black/40 items-center justify-center p-4 z-50">
+    <div class="bg-white w-full max-w-3xl rounded-2xl shadow-xl border border-neutral-200">
+      <div class="px-5 py-4 border-b border-neutral-200 flex items-center justify-between">
+        <h3 class="font-semibold text-lg">Import Woo XML</h3>
+        <button onclick="closeImportModal()" class="text-neutral-500 hover:text-black">✕</button>
+      </div>
+      <div class="p-5 space-y-4">
+        <div class="rounded-xl border border-neutral-200 bg-neutral-50 p-4">
+          <div class="text-sm font-medium mb-2">Režim importu</div>
+          <div class="space-y-2 text-sm">
+            <label class="flex items-start gap-2"><input type="radio" name="importMode" value="initial" checked> <span><strong>První import</strong><br><span class="text-neutral-500">Použij pro založení cílové katalogové struktury. Doporučeno pro prázdný katalog.</span></span></label>
+            <label class="flex items-start gap-2"><input type="radio" name="importMode" value="update"> <span><strong>Aktualizace s náhledem změn</strong><br><span class="text-neutral-500">Porovná nové produkty a kategorie, ukáže změny a pak je aplikuje.</span></span></label>
+            <label class="flex items-start gap-2"><input type="radio" name="importMode" value="replace"> <span><strong>Kompletní přepis</strong><br><span class="text-neutral-500">Nahradí celý katalog. Používej jen výjimečně.</span></span></label>
+          </div>
+        </div>
+        <div id="importSummary" class="rounded-xl border border-neutral-200 bg-white p-4 text-sm text-neutral-600">
+          Nahraj XML soubor pro náhled.
+        </div>
+      </div>
+      <div class="px-5 py-4 border-t border-neutral-200 flex justify-between">
+        <div class="text-xs text-neutral-500">Před importem se automaticky vytvoří lokální záloha katalogu.</div>
+        <div class="flex gap-2">
+          <button onclick="closeImportModal()" class="px-3 py-2 text-sm rounded-lg border border-neutral-300 hover:bg-neutral-50">Zavřít</button>
+          <button id="applyImportBtn" class="px-3 py-2 text-sm rounded-lg bg-neutral-900 text-white hover:bg-black">Použít import</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="categoryModal" class="hidden fixed inset-0 bg-black/40 items-center justify-center p-4 z-50">
+    <div class="bg-white w-full max-w-2xl rounded-2xl shadow-xl border border-neutral-200">
+      <div class="px-5 py-4 border-b border-neutral-200 flex items-center justify-between">
+        <h3 id="categoryModalTitle" class="font-semibold text-lg">Nová kategorie</h3>
+        <button onclick="closeCategoryModal()" class="text-neutral-500 hover:text-black">✕</button>
+      </div>
+      <div class="p-5 grid grid-cols-2 gap-4">
+        <div class="col-span-2">
+          <label class="block text-sm font-medium mb-1">Název / Name</label>
+          <input id="cat_name" class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-1">Slug</label>
+          <input id="cat_slug" class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-1">Nadřazená kategorie</label>
+          <select id="cat_parent" class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm"></select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-1">Sort order</label>
+          <input id="cat_sort_order" type="number" class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-1">Aktivní</label>
+          <select id="cat_is_active" class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm">
+            <option value="1">Ano</option>
+            <option value="0">Ne</option>
+          </select>
+        </div>
+        <div class="col-span-2">
+          <label class="block text-sm font-medium mb-1">Popis / Description</label>
+          <textarea id="cat_description" rows="4" class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm"></textarea>
+        </div>
+        <div class="col-span-2">
+          <label class="block text-sm font-medium mb-1">Obrázek kategorie (URL)</label>
+          <input id="cat_image" class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" placeholder="https://..." />
+        </div>
+      </div>
+      <div class="px-5 py-4 border-t border-neutral-200 flex items-center justify-between">
+        <button id="deleteCategoryBtn" class="px-3 py-2 text-sm rounded-lg border border-red-300 text-red-600 hover:bg-red-50 hidden">🗑 Smazat</button>
+        <div class="ml-auto flex gap-2">
+          <button onclick="closeCategoryModal()" class="px-3 py-2 text-sm rounded-lg border border-neutral-300 hover:bg-neutral-50">Zavřít</button>
+          <button id="saveCategoryBtn" class="px-3 py-2 text-sm rounded-lg bg-neutral-900 text-white hover:bg-black">Uložit</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="productModal" class="hidden fixed inset-0 bg-black/40 items-center justify-center p-4 z-50">
+    <div class="bg-white w-full max-w-6xl rounded-2xl shadow-xl border border-neutral-200 max-h-[92vh] overflow-hidden flex flex-col">
+      <div class="px-5 py-4 border-b border-neutral-200 flex items-center justify-between">
+        <h3 id="productModalTitle" class="font-semibold text-lg">Nový produkt</h3>
+        <button onclick="closeProductModal()" class="text-neutral-500 hover:text-black">✕</button>
+      </div>
+      <div class="flex-1 overflow-auto p-5 grid grid-cols-12 gap-4">
+        <div class="col-span-8 space-y-4">
+          <div class="bg-neutral-50 border border-neutral-200 rounded-2xl p-4">
+            <div class="grid grid-cols-2 gap-4">
+              <div class="col-span-2">
+                <label class="block text-sm font-medium mb-1">Název / Product name</label>
+                <input id="p_name" class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
+              </div>
+              <div>
+                <label class="block text-sm font-medium mb-1">Slug</label>
+                <input id="p_slug" class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
+              </div>
+              <div>
+                <label class="block text-sm font-medium mb-1">SKU</label>
+                <input id="p_sku" class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
+              </div>
+              <div>
+                <label class="block text-sm font-medium mb-1">Typ produktu</label>
+                <select id="p_type" class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm">
+                  <option value="simple">Simple</option>
+                  <option value="variable">Variable</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-sm font-medium mb-1">Status</label>
+                <select id="p_status" class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm">
+                  <option value="draft">Draft</option>
+                  <option value="publish">Publish</option>
+                  <option value="private">Private</option>
+                </select>
+              </div>
+              <div class="col-span-2">
+                <label class="block text-sm font-medium mb-1">Short description</label>
+                <div class="rounded-xl border border-neutral-300 bg-white overflow-hidden">
+                  <div class="editor-toolbar flex flex-wrap gap-2 px-3 py-2 border-b border-neutral-200 bg-neutral-50" data-editor="short_description">
+                    <button type="button" class="editor-cmd px-2 py-1 rounded-lg border border-neutral-300 text-sm" data-editor-target="short_description" data-cmd="bold"><strong>B</strong></button>
+                    <button type="button" class="editor-cmd px-2 py-1 rounded-lg border border-neutral-300 text-sm italic" data-editor-target="short_description" data-cmd="italic">I</button>
+                    <button type="button" class="editor-cmd px-2 py-1 rounded-lg border border-neutral-300 text-sm" data-editor-target="short_description" data-cmd="insertUnorderedList">• List</button>
+                    <button type="button" class="editor-cmd px-2 py-1 rounded-lg border border-neutral-300 text-sm" data-editor-target="short_description" data-cmd="createLink">Odkaz</button>
+                    <button type="button" class="editor-mode px-2 py-1 rounded-lg border border-neutral-300 text-sm active" data-editor-target="short_description" data-mode="visual">Text</button>
+                    <button type="button" class="editor-mode px-2 py-1 rounded-lg border border-neutral-300 text-sm" data-editor-target="short_description" data-mode="html">HTML</button>
+                  </div>
+                  <div id="p_short_description_editor" data-placeholder="Vlož krátký popis produktu…" class="wysiwyg-editor min-h-[120px] px-3 py-2 text-sm outline-none" contenteditable="true"></div>
+                  <textarea id="p_short_description_html" rows="5" class="hidden w-full border-0 border-t border-neutral-200 px-3 py-2 text-sm font-mono"></textarea>
+                </div>
+              </div>
+              <div class="col-span-2">
+                <label class="block text-sm font-medium mb-1">Popis / Description</label>
+                <div class="rounded-xl border border-neutral-300 bg-white overflow-hidden">
+                  <div class="editor-toolbar flex flex-wrap gap-2 px-3 py-2 border-b border-neutral-200 bg-neutral-50" data-editor="description">
+                    <button type="button" class="editor-cmd px-2 py-1 rounded-lg border border-neutral-300 text-sm" data-editor-target="description" data-cmd="bold"><strong>B</strong></button>
+                    <button type="button" class="editor-cmd px-2 py-1 rounded-lg border border-neutral-300 text-sm italic" data-editor-target="description" data-cmd="italic">I</button>
+                    <button type="button" class="editor-cmd px-2 py-1 rounded-lg border border-neutral-300 text-sm" data-editor-target="description" data-cmd="insertUnorderedList">• List</button>
+                    <button type="button" class="editor-cmd px-2 py-1 rounded-lg border border-neutral-300 text-sm" data-editor-target="description" data-cmd="insertOrderedList">1. List</button>
+                    <button type="button" class="editor-cmd px-2 py-1 rounded-lg border border-neutral-300 text-sm" data-editor-target="description" data-cmd="createLink">Odkaz</button>
+                    <button type="button" class="editor-mode px-2 py-1 rounded-lg border border-neutral-300 text-sm active" data-editor-target="description" data-mode="visual">Text</button>
+                    <button type="button" class="editor-mode px-2 py-1 rounded-lg border border-neutral-300 text-sm" data-editor-target="description" data-mode="html">HTML</button>
+                  </div>
+                  <div id="p_description_editor" data-placeholder="Vlož detailní popis produktu…" class="wysiwyg-editor min-h-[220px] px-3 py-2 text-sm outline-none" contenteditable="true"></div>
+                  <textarea id="p_description_html" rows="9" class="hidden w-full border-0 border-t border-neutral-200 px-3 py-2 text-sm font-mono"></textarea>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div id="simplePanel" class="bg-neutral-50 border border-neutral-200 rounded-2xl p-4">
+            <h4 class="font-semibold mb-3">Ceny, sklad a Woo nastavení</h4>
+            <div class="grid grid-cols-2 gap-4 mb-4">
+              <div>
+                <label class="block text-sm font-medium mb-1">Regular price</label>
+                <input id="p_price" type="number" step="0.01" class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
+              </div>
+              <div>
+                <label class="block text-sm font-medium mb-1">Sale price</label>
+                <input id="p_sale_price" type="number" step="0.01" class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
+              </div>
+            </div>
+            <div class="grid grid-cols-3 gap-4 mb-4">
+              <label class="flex items-center gap-2 text-sm font-medium"><input id="p_virtual" type="checkbox" class="rounded border-neutral-300"> Virtuální produkt</label>
+              <label class="flex items-center gap-2 text-sm font-medium"><input id="p_downloadable" type="checkbox" class="rounded border-neutral-300"> Ke stažení</label>
+              <label class="flex items-center gap-2 text-sm font-medium"><input id="p_manage_stock" type="checkbox" class="rounded border-neutral-300"> Spravovat sklad</label>
+            </div>
+            <div class="grid grid-cols-3 gap-4">
+              <div>
+                <label class="block text-sm font-medium mb-1">Stock qty</label>
+                <input id="p_stock" type="number" step="1" class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
+              </div>
+              <div>
+                <label class="block text-sm font-medium mb-1">Stock status</label>
+                <select id="p_stock_status" class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm">
+                  <option value="instock">In stock</option>
+                  <option value="outofstock">Out of stock</option>
+                  <option value="onbackorder">On backorder</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-sm font-medium mb-1">Dodavatel / výrobce</label>
+                <input id="p_supplier" class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-neutral-50 border border-neutral-200 rounded-2xl p-4">
+            <h4 class="font-semibold mb-3">Interní ekonomika a rozměry</h4>
+            <div class="grid grid-cols-2 gap-4 mb-4">
+              <div>
+                <label class="block text-sm font-medium mb-1">Nákupní cena</label>
+                <input id="p_purchase_price" type="number" step="0.01" class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
+              </div>
+              <div>
+                <label class="block text-sm font-medium mb-1">Hmotnost</label>
+                <input id="p_weight" type="number" step="0.001" class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
+              </div>
+            </div>
+            <div class="grid grid-cols-3 gap-4">
+              <div>
+                <label class="block text-sm font-medium mb-1">Délka</label>
+                <input id="p_length" type="number" step="0.01" class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
+              </div>
+              <div>
+                <label class="block text-sm font-medium mb-1">Šířka</label>
+                <input id="p_width" type="number" step="0.01" class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
+              </div>
+              <div>
+                <label class="block text-sm font-medium mb-1">Výška</label>
+                <input id="p_height" type="number" step="0.01" class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" />
+              </div>
+            </div>
+          </div>
+
+          <div id="variablePanel" class="hidden bg-neutral-50 border border-neutral-200 rounded-2xl p-4">
+            <div class="flex items-center justify-between mb-3">
+              <h4 class="font-semibold">Varianty / Variations</h4>
+              <div class="flex items-center gap-2">
+                <button type="button" id="addVariantBtn" class="px-3 py-2 text-sm rounded-lg border border-neutral-300 hover:bg-white">+ Přidat variantu</button>
+                <button type="button" id="generateVariantsBtn" class="px-3 py-2 text-sm rounded-lg border border-neutral-300 hover:bg-white">Generovat varianty</button>
+              </div>
+            </div>
+            <div class="grid grid-cols-2 gap-4 mb-4">
+              <div>
+                <label class="block text-sm font-medium mb-1">Atribut 1 název</label>
+                <input id="attr1_name" class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" placeholder="Velikost / Size" />
+              </div>
+              <div>
+                <label class="block text-sm font-medium mb-1">Atribut 1 hodnoty</label>
+                <input id="attr1_values" class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" placeholder="S, M, L" />
+              </div>
+              <div>
+                <label class="block text-sm font-medium mb-1">Atribut 2 název</label>
+                <input id="attr2_name" class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" placeholder="Barva / Color" />
+              </div>
+              <div>
+                <label class="block text-sm font-medium mb-1">Atribut 2 hodnoty</label>
+                <input id="attr2_values" class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm" placeholder="Černá, Hnědá" />
+              </div>
+            </div>
+            <div id="variantsTable" class="rounded-2xl border border-neutral-200 overflow-hidden bg-white"></div>
+          </div>
+        </div>
+
+        <div class="col-span-4 space-y-4">
+          <div class="bg-neutral-50 border border-neutral-200 rounded-2xl p-4">
+            <h4 class="font-semibold mb-3">Kategorie / Categories</h4>
+            <div id="productCategoryChecklist" class="max-h-52 overflow-auto space-y-2 text-sm"></div>
+          </div>
+          <div class="bg-neutral-50 border border-neutral-200 rounded-2xl p-4">
+            <div class="flex items-center justify-between mb-3">
+              <h4 class="font-semibold">Obrázky / Images</h4>
+              <button type="button" id="addGalleryImageBtn" class="px-2 py-1 text-xs rounded-lg border border-neutral-300 hover:bg-white">+ Přidat</button>
+            </div>
+            <input id="p_image" class="w-full rounded-xl border border-neutral-300 px-3 py-2 text-sm mb-3" placeholder="Hlavní obrázek URL" />
+            <div id="mainImagePreview" class="mb-3"></div>
+            <div id="galleryImagesList" class="space-y-2"></div>
+          </div>
+        </div>
+      </div>
+      <div class="px-5 py-4 border-t border-neutral-200 flex items-center justify-between gap-3">
+        <div class="flex items-center gap-2">
+          <button id="deleteProductBtn" class="px-3 py-2 text-sm rounded-lg border border-red-300 text-red-600 hover:bg-red-50 hidden">🗑 Smazat</button>
+          <span id="productWooStatus" class="hidden text-xs rounded-full border px-2 py-1"></span>
+        </div>
+        <div class="ml-auto flex gap-2">
+          <button id="syncWooBtn" class="px-3 py-2 text-sm rounded-lg border border-amber-300 text-amber-700 hover:bg-amber-50 hidden">Synchronizovat do Woo</button>
+          <button onclick="closeProductModal()" class="px-3 py-2 text-sm rounded-lg border border-neutral-300 hover:bg-neutral-50">Zavřít</button>
+          <button id="saveProductBtn" class="px-3 py-2 text-sm rounded-lg bg-neutral-900 text-white hover:bg-black">Uložit produkt</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+const storageKeys = {
+  apiBase: 'feedhub_api_base',
+  apiController: 'viki_api_controller',
+  token: 'feedhub_token',
+  backup: 'feedhub_catalog_backup'
+};
+
+const state = {
+  apiBase: sessionStorage.getItem('viki_api_base') || '',
+  apiController: sessionStorage.getItem('viki_api_controller') || '',
+  health: null,
+  token: sessionStorage.getItem(storageKeys.token) || '',
+  me: null,
+  stores: [],
+  permissions: [],
+  categories: [],
+  products: [],
+  catalogTotal: 0,
+  selectedCategoryId: null,
+  selectedProductIds: [],
+  editingCategoryId: null,
+  editingProductId: null,
+  q: '',
+  draggedCategoryId: null,
+  draggedProductId: null,
+  confirmCallback: null,
+  pendingImportData: null,
+  pendingImportSummary: null,
+  currentGalleryImages: [],
+  currentVariants: [],
+  productDuplicateDraft: null,
+  pagination: { page: 1, pageSize: Number(localStorage.getItem('viki_page_size') || 50) || 50, total: 0, pages: 1 },
+  editorModes: { short_description: 'visual', description: 'visual' }
+};
+
+const el = (id) => document.getElementById(id);
+
+function normalizeBase(url) {
+  return (url || '').trim().replace(/\/$/, '');
+}
+
+function apiBaseCandidates() {
+  const path = decodeURI(location.pathname || '/');
+  const adminMarker = path.lastIndexOf('/admin/');
+  const prefix = adminMarker >= 0 ? path.slice(0, adminMarker) : '';
+  const inferred = `${location.origin}${prefix}`;
+  const alternatives = [
+    state.apiBase,
+    sessionStorage.getItem('viki_api_base') || '',
+    inferred,
+    prefix.endsWith('/public') ? `${location.origin}${prefix.slice(0, -7)}` : `${inferred}/public`,
+    location.origin,
+    `${location.origin}/public`
+  ];
+  return [...new Set(alternatives.map(normalizeBase).filter(url => url.startsWith(location.origin)))];
+}
+
+function directApiUrl(controller, path) {
+  const [route, query = ''] = String(path).split('?');
+  const url = new URL(controller, location.href);
+  url.searchParams.set('route', route);
+  new URLSearchParams(query).forEach((value, key) => url.searchParams.append(key, value));
+  return url.toString();
+}
+
+function apiUrl(path) {
+  return state.apiController
+    ? directApiUrl(state.apiController, path)
+    : `${state.apiBase}${path}`;
+}
+
+function apiEndpointCandidates() {
+  const candidates = [];
+  const savedController = sessionStorage.getItem('viki_api_controller') || '';
+  if (state.apiBase && savedController) candidates.push({base: state.apiBase, controller: savedController});
+
+  for (const base of apiBaseCandidates()) {
+    candidates.push({base, controller: ''});
+    candidates.push({base, controller: `${base}/api.php`});
+    candidates.push({base, controller: `${base}/index.php`});
+    if (!base.endsWith('/public')) candidates.push({base, controller: `${base}/public/index.php`});
+  }
+
+  const seen = new Set();
+  return candidates.filter(candidate => {
+    const key = `${candidate.base}|${candidate.controller}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return candidate.base.startsWith(location.origin) && (!candidate.controller || candidate.controller.startsWith(location.origin));
+  });
+}
+
+async function resolveApiBase() {
+  const status = el('loginStatus');
+  if (status) {
+    status.textContent = 'Ověřuji spojení s Viki…';
+    status.classList.remove('hidden');
+  }
+  for (const candidate of apiEndpointCandidates()) {
+    try {
+      const healthUrl = candidate.controller
+        ? directApiUrl(candidate.controller, '/api/v2/health')
+        : `${candidate.base}/api/v2/health`;
+      const response = await fetch(healthUrl, {
+        headers: {'Accept':'application/json'},
+        cache: 'no-store',
+        credentials: 'same-origin'
+      });
+      const contentType = response.headers.get('content-type') || '';
+      if (!response.ok || !contentType.includes('application/json')) continue;
+      const payload = await response.json();
+      if (payload?.success !== true) continue;
+      state.apiBase = candidate.base;
+      state.apiController = candidate.controller;
+      state.health = payload.data || null;
+      sessionStorage.setItem('viki_api_base', candidate.base);
+      sessionStorage.setItem('viki_api_controller', candidate.controller);
+      if (status) status.classList.add('hidden');
+      return candidate;
+    } catch (_) {
+      // Zkusí se další běžné umístění API.
+    }
+  }
+  if (status) status.classList.add('hidden');
+  throw new Error('PHP vstup Viki není dostupný. Zkontroluj, že jsou na serveru soubory api.php a public/index.php a že hosting spouští PHP 8.1 nebo novější.');
+}
+
+function saveSession() {
+  sessionStorage.setItem(storageKeys.token, state.token || '');
+  if (state.apiBase) sessionStorage.setItem('viki_api_base', state.apiBase);
+  sessionStorage.setItem('viki_api_controller', state.apiController || '');
+}
+
+function clearSession() {
+  state.token = '';
+  state.me = null;
+  state.stores = [];
+  state.permissions = [];
+  state.categories = [];
+  state.products = [];
+  state.selectedProductIds = [];
+  state.selectedCategoryId = null;
+  state.q = '';
+  sessionStorage.removeItem(storageKeys.token);
+}
+
+function slugify(text='') {
+  return text.toString().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
+}
+
+function escapeHtml(str='') {
+  return String(str).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'", '&#039;');
+}
+
+function stripHtml(str='') {
+  return new DOMParser().parseFromString(String(str), 'text/html').body.textContent || '';
+}
+
+function sanitizeEditorHtml(value='') {
+  const doc = new DOMParser().parseFromString(String(value), 'text/html');
+  const allowed = new Set(['P','BR','STRONG','B','EM','I','U','UL','OL','LI','H2','H3','H4','A','SPAN','TABLE','THEAD','TBODY','TR','TH','TD','BLOCKQUOTE']);
+  [...doc.body.querySelectorAll('*')].forEach(node => {
+    if (!allowed.has(node.tagName)) {
+      node.replaceWith(...node.childNodes);
+      return;
+    }
+    [...node.attributes].forEach(attribute => {
+      if (node.tagName !== 'A' || attribute.name.toLowerCase() !== 'href') node.removeAttribute(attribute.name);
+    });
+    if (node.tagName === 'A') {
+      const href = (node.getAttribute('href') || '').trim();
+      if (!/^(https?:|mailto:|#|\/)/i.test(href)) node.setAttribute('href', '#');
+      node.setAttribute('rel', 'noopener noreferrer');
+    }
+  });
+  return doc.body.innerHTML;
+}
+
+function setEditorHtml(target, html = '') {
+  const editor = el(`p_${target}_editor`);
+  const textarea = el(`p_${target}_html`);
+  if (!editor || !textarea) return;
+  const clean = sanitizeEditorHtml(html || '');
+  editor.innerHTML = clean;
+  textarea.value = clean;
+}
+
+function getEditorHtml(target) {
+  const editor = el(`p_${target}_editor`);
+  const textarea = el(`p_${target}_html`);
+  const mode = state.editorModes[target] || 'visual';
+  return mode === 'html' ? (textarea?.value || '').trim() : (editor?.innerHTML || '').trim();
+}
+
+function setEditorMode(target, mode) {
+  state.editorModes[target] = mode;
+  const editor = el(`p_${target}_editor`);
+  const textarea = el(`p_${target}_html`);
+  const toolbar = document.querySelector(`.editor-toolbar[data-editor="${target}"]`);
+  if (!editor || !textarea || !toolbar) return;
+  if (mode === 'html') {
+    textarea.value = editor.innerHTML || '';
+    textarea.classList.remove('hidden');
+    editor.classList.add('hidden');
+  } else {
+    editor.innerHTML = textarea.value || editor.innerHTML || '';
+    editor.classList.remove('hidden');
+    textarea.classList.add('hidden');
+  }
+  toolbar.querySelectorAll('.editor-mode').forEach(btn => btn.classList.toggle('active', btn.dataset.mode === mode));
+}
+
+function applyEditorCommand(target, cmd) {
+  const editor = el(`p_${target}_editor`);
+  if (!editor) return;
+  setEditorMode(target, 'visual');
+  editor.focus();
+  if (cmd === 'createLink') {
+    const url = window.prompt('Vlož URL odkazu', 'https://');
+    if (!url) return;
+    document.execCommand('createLink', false, url);
+    return;
+  }
+  document.execCommand(cmd, false);
+}
+
+function updateCatalogFooter() {
+  const visible = getVisibleProducts();
+  const total = Number(state.catalogTotal || state.pagination.total || 0);
+  const pageSize = Number(state.pagination.pageSize || 50);
+  const totalPages = Math.max(1, Number(state.pagination.pages || 1));
+  state.pagination.page = Math.min(Math.max(1, state.pagination.page || 1), totalPages);
+  el('footerTotalProducts').textContent = String(total);
+  el('footerFilteredProducts').textContent = String(total);
+  el('footerVisibleProducts').textContent = String(visible.length);
+  el('paginationLabel').textContent = `Strana ${state.pagination.page} / ${totalPages}`;
+  el('paginationPrevBtn').disabled = state.pagination.page <= 1;
+  el('paginationNextBtn').disabled = state.pagination.page >= totalPages;
+  el('paginationPrevBtn').classList.toggle('opacity-50', state.pagination.page <= 1);
+  el('paginationNextBtn').classList.toggle('opacity-50', state.pagination.page >= totalPages);
+  el('pageSizeSelect').value = String(pageSize);
+}
+
+function toast(message, type = 'success', duration = 3500) {
+  const colors = {
+    success: 'border-green-200 bg-green-50 text-green-800',
+    error: 'border-red-200 bg-red-50 text-red-800',
+    info: 'border-neutral-200 bg-white text-neutral-800'
+  };
+  const node = document.createElement('div');
+  node.className = `min-w-[280px] max-w-[420px] rounded-xl border px-4 py-3 shadow-sm ${colors[type] || colors.info}`;
+  node.textContent = message;
+  el('toastWrap').appendChild(node);
+  setTimeout(() => node.remove(), duration);
+}
+
+async function api(path, options = {}) {
+  const headers = {'Content-Type': 'application/json', ...(options.headers || {})};
+  if (state.token) headers['Authorization'] = `Bearer ${state.token}`;
+
+  const res = await fetch(apiUrl(path), {...options, headers, credentials:'same-origin'});
+  const raw = await res.text();
+  let data = {};
+  try { data = raw ? JSON.parse(raw) : {}; } catch (_) {}
+  if (!res.ok || data.success === false) {
+    const fallback = res.status === 404
+      ? 'Požadovaná část API nebyla na serveru nalezena.'
+      : `Server Viki vrátil chybu HTTP ${res.status}.`;
+    throw new Error(data.message || data.error || fallback);
+  }
+  return data;
+}
+
+function getCategoryById(id) {
+  return state.categories.find(c => Number(c.id) === Number(id)) || null;
+}
+
+function getChildren(parentId) {
+  return state.categories
+    .filter(c => Number(c.parentId ?? c.parent_id ?? 0) === Number(parentId ?? 0) || ((c.parentId ?? c.parent_id ?? null) === null && parentId === null))
+    .sort((a, b) => {
+      const soA = Number(a.sort_order ?? 0);
+      const soB = Number(b.sort_order ?? 0);
+      if (soA !== soB) return soA - soB;
+      return String(a.name || '').localeCompare(String(b.name || ''), 'cs');
+    });
+}
+
+function getCategoryPath(id) {
+  const parts = [];
+  let current = getCategoryById(id);
+  while (current) {
+    parts.unshift(current.name);
+    const pid = current.parentId ?? current.parent_id ?? null;
+    current = pid ? getCategoryById(pid) : null;
+  }
+  return parts.join(' / ');
+}
+
+function isDescendant(targetId, possibleAncestorId) {
+  let current = getCategoryById(targetId);
+  while (current) {
+    const pid = current.parentId ?? current.parent_id ?? null;
+    if (Number(pid) === Number(possibleAncestorId)) return true;
+    current = pid ? getCategoryById(pid) : null;
+  }
+  return false;
+}
+
+function getWooSyncMeta(product) {
+  const status = String(product?.woo_sync_status || 'unmapped');
+  const map = {
+    synced: { label: product?.woo_product_id ? `Woo #${product.woo_product_id}` : 'Synchronizováno', rowClass: 'bg-green-50 text-green-700 border-green-200', actionClass: 'border-green-300 text-green-700 hover:bg-green-50' },
+    pending: { label: 'Čeká na sync', rowClass: 'bg-amber-50 text-amber-700 border-amber-200', actionClass: 'border-amber-300 text-amber-700 hover:bg-amber-50' },
+    error: { label: 'Chyba syncu', rowClass: 'bg-red-50 text-red-700 border-red-200', actionClass: 'border-red-300 text-red-700 hover:bg-red-50' },
+    unmapped: { label: 'Nesynchronizováno', rowClass: 'bg-neutral-50 text-neutral-600 border-neutral-200', actionClass: 'border-neutral-300 text-neutral-700 hover:bg-neutral-50' }
+  };
+  return map[status] || map.unmapped;
+}
+
+function getVisibleProducts() {
+  return Array.isArray(state.products) ? state.products : [];
+}
+
+function sumVariantStock(product) {
+  if (Array.isArray(product.variants) && product.variants.length) {
+    return product.variants.reduce((sum, variant) => sum + Number(variant.stock || 0), 0);
+  }
+  return Number(product.variant_stock || 0);
+}
+
+
+function getCategoryDescendantIds(categoryId) {
+  const ids = [Number(categoryId)];
+  const stack = [Number(categoryId)];
+  while (stack.length) {
+    const currentId = stack.pop();
+    getChildren(currentId).forEach(child => {
+      const childId = Number(child.id);
+      if (!ids.includes(childId)) {
+        ids.push(childId);
+        stack.push(childId);
+      }
+    });
+  }
+  return ids;
+}
+
+function getDirectProductCount(categoryId) {
+  return Number(getCategoryById(categoryId)?.direct_product_count || 0);
+}
+
+function getNestedProductCount(categoryId) {
+  const descendantIds = getCategoryDescendantIds(categoryId);
+  return descendantIds.reduce((sum, id) => sum + getDirectProductCount(id), 0);
+}
+
+function renderSelectedCategoryHeader() {
+  if (!state.selectedCategoryId) {
+    el('selectedCategoryTitle').textContent = 'Všechny produkty';
+    el('selectedCategoryMeta').textContent = 'Klikni na kategorii vlevo pro filtraci.';
+    return;
+  }
+  const category = getCategoryById(state.selectedCategoryId);
+  el('selectedCategoryTitle').textContent = category ? category.name : 'Všechny produkty';
+  if (!category) {
+    el('selectedCategoryMeta').textContent = '';
+    return;
+  }
+  const directCount = getDirectProductCount(category.id);
+  const nestedCount = getNestedProductCount(category.id);
+  const description = (category.description || '').trim() || 'Bez popisu kategorie.';
+  el('selectedCategoryMeta').textContent = `${description} · Přímé produkty: ${directCount} · Celkem včetně podkategorií: ${nestedCount}`;
+}
+
+function renderCategoryTree() {
+  const search = el('categorySearch').value.trim().toLowerCase();
+  const wrap = el('categoryTree');
+  wrap.innerHTML = '';
+
+  const rootDrop = document.createElement('div');
+  rootDrop.className = 'mb-2 rounded-xl border border-dashed border-neutral-300 px-3 py-2 text-xs text-neutral-500 bg-neutral-50';
+  rootDrop.textContent = 'Přetáhni kategorii sem pro přesun na hlavní úroveň';
+  rootDrop.addEventListener('dragover', e => e.preventDefault());
+  rootDrop.addEventListener('drop', async (e) => {
+    e.preventDefault();
+    if (!state.draggedCategoryId) return;
+    try {
+      const dragged = getCategoryById(state.draggedCategoryId);
+      await saveCategoryOrder(dragged.id, null, getNextSortOrder(null));
+      toast('Kategorie byla přesunuta na hlavní úroveň.');
+      await bootstrap(true);
+    } catch (err) {
+      toast(err.message || 'Přesun kategorie selhal.', 'error');
+    }
+  });
+  wrap.appendChild(rootDrop);
+
+  function createNode(category, depth = 0) {
+    const matchesSearch = !search || (category.name || '').toLowerCase().includes(search) || (category.description || '').toLowerCase().includes(search) || (category.slug || '').toLowerCase().includes(search);
+    const childNodes = getChildren(category.id).map(child => createNode(child, depth + 1)).filter(Boolean);
+    if (!matchesSearch && childNodes.length === 0) return null;
+
+    const container = document.createElement('div');
+    container.className = 'mb-1';
+
+    const beforeDrop = document.createElement('div');
+    beforeDrop.className = 'h-2';
+    beforeDrop.style.marginLeft = `${depth * 16}px`;
+    beforeDrop.addEventListener('dragover', e => e.preventDefault());
+    beforeDrop.addEventListener('drop', async (e) => {
+      e.preventDefault();
+      try {
+        if (state.draggedCategoryId) {
+          const sibling = getCategoryById(category.id);
+          await saveCategoryOrder(state.draggedCategoryId, sibling.parentId ?? sibling.parent_id ?? null, Number(sibling.sort_order ?? 0) - 1, sibling.id);
+          toast('Kategorie byla přesunuta.');
+          await bootstrap(true);
+        }
+        if (state.draggedProductId) {
+          await assignProductToCategory(state.draggedProductId, category.id);
+        }
+      } catch (err) {
+        toast(err.message || 'Přesun selhal.', 'error');
+      }
+    });
+    container.appendChild(beforeDrop);
+
+    const row = document.createElement('div');
+    row.className = `group flex items-center gap-2 rounded-xl border px-3 py-2 cursor-pointer ${Number(state.selectedCategoryId) === Number(category.id) ? 'bg-neutral-900 text-white border-neutral-900' : 'bg-white border-neutral-200 hover:bg-neutral-50'}`;
+    row.style.marginLeft = `${depth * 16}px`;
+    row.draggable = true;
+
+    row.addEventListener('dragstart', (e) => {
+      state.draggedCategoryId = category.id;
+      row.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+    });
+    row.addEventListener('dragend', () => {
+      row.classList.remove('dragging');
+      state.draggedCategoryId = null;
+    });
+    row.addEventListener('dragover', e => e.preventDefault());
+    row.addEventListener('drop', async (e) => {
+      e.preventDefault();
+      try {
+        if (state.draggedCategoryId) {
+          if (Number(state.draggedCategoryId) === Number(category.id)) return;
+          if (isDescendant(category.id, state.draggedCategoryId)) throw new Error('Nelze přesunout kategorii do její podkategorie.');
+          await saveCategoryOrder(state.draggedCategoryId, category.id, getNextSortOrder(category.id));
+          toast('Kategorie byla přesunuta.');
+          await bootstrap(true);
+        }
+        if (state.draggedProductId) {
+          await assignProductToCategory(state.draggedProductId, category.id);
+        }
+      } catch (err) {
+        toast(err.message || 'Přesun selhal.', 'error');
+      }
+    });
+
+    const titleWrap = document.createElement('div');
+    titleWrap.className = 'min-w-0 flex-1';
+    const directCount = getDirectProductCount(category.id);
+    const nestedCount = getNestedProductCount(category.id);
+    titleWrap.innerHTML = `<div class="font-medium truncate">${escapeHtml(category.name)}</div><div class="${Number(state.selectedCategoryId) === Number(category.id) ? 'text-neutral-300' : 'text-neutral-500'} text-xs truncate">${escapeHtml(category.slug || '')} · ${directCount} přímých / ${nestedCount} celkem</div>`;
+    titleWrap.onclick = () => {
+      state.selectedCategoryId = category.id;
+      state.pagination.page = 1;
+      loadProducts();
+    };
+
+    const actions = document.createElement('div');
+    actions.className = 'flex items-center gap-1';
+
+    const addChildBtn = document.createElement('button');
+    addChildBtn.className = `opacity-100 sm:opacity-0 group-hover:opacity-100 text-xs px-2 py-1 rounded-lg ${Number(state.selectedCategoryId) === Number(category.id) ? 'bg-white/10 hover:bg-white/20' : 'border border-neutral-300 hover:bg-white'}`;
+    addChildBtn.textContent = '+';
+    addChildBtn.onclick = (ev) => { ev.stopPropagation(); openCategoryModal(null, category.id); };
+
+    const editBtn = document.createElement('button');
+    editBtn.className = `opacity-100 sm:opacity-0 group-hover:opacity-100 text-xs px-2 py-1 rounded-lg ${Number(state.selectedCategoryId) === Number(category.id) ? 'bg-white/10 hover:bg-white/20' : 'border border-neutral-300 hover:bg-white'}`;
+    editBtn.textContent = 'Upravit';
+    editBtn.onclick = (ev) => { ev.stopPropagation(); openCategoryModal(category.id); };
+
+    const deleteBtn = document.createElement('button');
+    deleteBtn.className = `opacity-100 sm:opacity-0 group-hover:opacity-100 text-xs px-2 py-1 rounded-lg ${Number(state.selectedCategoryId) === Number(category.id) ? 'bg-red-500/20 hover:bg-red-500/30 text-white' : 'border border-red-300 hover:bg-red-50 text-red-600'}`;
+    deleteBtn.textContent = '🗑';
+    deleteBtn.onclick = (ev) => { ev.stopPropagation(); confirmDeleteCategory(category.id); };
+
+    actions.appendChild(addChildBtn);
+    actions.appendChild(editBtn);
+    actions.appendChild(deleteBtn);
+    row.appendChild(titleWrap);
+    row.appendChild(actions);
+    container.appendChild(row);
+    childNodes.forEach(node => container.appendChild(node));
+    return container;
+  }
+
+  getChildren(null).map(root => createNode(root)).filter(Boolean).forEach(node => wrap.appendChild(node));
+}
+
+function renderProducts() {
+  const rows = el('productRows');
+  rows.innerHTML = '';
+  const visible = getVisibleProducts();
+  const pageItems = visible;
+
+  if (!visible.length) {
+    rows.innerHTML = '<div class="px-4 py-8 text-sm text-neutral-500">V této kategorii zatím nejsou žádné produkty.</div>';
+    renderBulkToolbar();
+    return;
+  }
+
+  pageItems.forEach(product => {
+    const row = document.createElement('div');
+    row.className = 'grid gap-3 px-4 py-3 items-center hover:bg-neutral-50';
+    row.style.gridTemplateColumns = '42px minmax(280px,2.2fr) 70px 120px 90px 110px 90px minmax(160px,1.1fr) 130px 210px';
+    row.draggable = true;
+    row.addEventListener('dragstart', (e) => {
+      state.draggedProductId = product.id;
+      e.dataTransfer.effectAllowed = 'move';
+    });
+    row.addEventListener('dragend', () => {
+      state.draggedProductId = null;
+    });
+
+    const categories = (product.categoryIds || []).map(id => getCategoryById(id)?.name).filter(Boolean).join(', ');
+    const checked = state.selectedProductIds.includes(product.id);
+    const productIdLabel = product.id != null ? String(product.id) : '—';
+    const wooMeta = getWooSyncMeta(product);
+
+    row.innerHTML = `
+      <div><input data-product-checkbox="${product.id}" type="checkbox" class="rounded border-neutral-300" ${checked ? 'checked' : ''}></div>
+      <div class="flex items-center gap-3 min-w-0">
+        <div class="w-12 h-12 rounded-xl overflow-hidden bg-neutral-100 border border-neutral-200 shrink-0">
+          ${product.image ? `<img src="${escapeHtml(product.image)}" alt="" class="w-full h-full object-cover">` : `<div class="w-full h-full flex items-center justify-center text-xs text-neutral-400">IMG</div>`}
+        </div>
+        <div class="min-w-0">
+          <div class="font-medium truncate">${escapeHtml(product.name || '')}</div>
+        </div>
+      </div>
+      <div class="text-sm text-neutral-600">${escapeHtml(productIdLabel)}</div>
+      <div class="text-sm truncate">${escapeHtml(product.sku || '')}</div>
+      <div><span class="inline-flex rounded-full bg-neutral-100 border border-neutral-200 px-2 py-1 text-xs">${escapeHtml(product.type || '')}</span></div>
+      <div class="text-sm">${product.type === 'variable' ? '—' : escapeHtml(product.regularPrice || '')}</div>
+      <div class="text-sm">${product.type === 'variable' ? sumVariantStock(product) : escapeHtml(product.stock || '')}</div>
+      <div class="text-sm text-neutral-600 truncate">${escapeHtml(categories)}</div>
+      <div><span class="inline-flex rounded-full border px-2 py-1 text-xs ${wooMeta.rowClass}">${escapeHtml(wooMeta.label)}</span></div>
+      <div class="flex items-center justify-end gap-1 flex-wrap">
+        <button class="px-2 py-1 text-sm rounded-lg border ${wooMeta.actionClass}" onclick="syncProductToWoo(${product.id})">Sync Woo</button>
+        <button class="px-2 py-1 text-sm rounded-lg border border-neutral-300 hover:bg-white" onclick="openProductModal(${product.id})">Upravit</button>
+        <button class="px-2 py-1 text-sm rounded-lg border border-neutral-300 hover:bg-white" title="Duplikovat produkt" aria-label="Duplikovat produkt" onclick="duplicateProduct(${product.id})">⧉</button>
+        <button class="px-2 py-1 text-sm rounded-lg border border-red-300 text-red-600 hover:bg-red-50" title="Smazat produkt" aria-label="Smazat produkt" onclick="confirmDeleteProduct(${product.id})">🗑</button>
+      </div>
+    `;
+    rows.appendChild(row);
+  });
+
+  rows.querySelectorAll('[data-product-checkbox]').forEach(cb => {
+    cb.addEventListener('change', (e) => {
+      const id = Number(e.target.getAttribute('data-product-checkbox'));
+      if (e.target.checked) {
+        if (!state.selectedProductIds.includes(id)) state.selectedProductIds.push(id);
+      } else {
+        state.selectedProductIds = state.selectedProductIds.filter(item => item !== id);
+      }
+      renderBulkToolbar();
+    });
+  });
+
+  renderBulkToolbar();
+}
+
+function duplicateProduct(productId) {
+  const source = state.products.find(item => Number(item.id) === Number(productId));
+  if (!source) {
+    toast('Produkt pro duplikaci nebyl nalezen.', 'error');
+    return;
+  }
+
+  state.productDuplicateDraft = {
+    ...JSON.parse(JSON.stringify(source)),
+    id: null,
+    slug: '',
+    sku: '',
+    name: `${source.name || 'Produkt'} - kopie`
+  };
+
+  openProductModal();
+}
+
+function populateCategoryParentSelect(selectedId = null) {
+  const select = el('cat_parent');
+  select.innerHTML = '<option value="">Bez nadřazené kategorie</option>';
+  state.categories.forEach(category => {
+    if (selectedId && Number(category.id) === Number(selectedId)) return;
+    const option = document.createElement('option');
+    option.value = category.id;
+    option.textContent = getCategoryPath(category.id);
+    select.appendChild(option);
+  });
+}
+
+function renderProductCategoryChecklist(selectedIds = []) {
+  const wrap = el('productCategoryChecklist');
+  wrap.innerHTML = '';
+  state.categories.forEach(category => {
+    const label = document.createElement('label');
+    label.className = 'flex items-start gap-2';
+    label.innerHTML = `
+      <input type="checkbox" class="mt-1 rounded border-neutral-300" value="${category.id}" ${selectedIds.includes(Number(category.id)) ? 'checked' : ''}>
+      <span>
+        <div>${escapeHtml(category.name)}</div>
+        <div class="text-xs text-neutral-500">${escapeHtml(getCategoryPath(category.id))}</div>
+      </span>
+    `;
+    wrap.appendChild(label);
+  });
+}
+
+function renderImageSection(product = null) {
+  const mainUrl = el('p_image').value.trim();
+  el('mainImagePreview').innerHTML = mainUrl
+    ? `<div class="rounded-xl overflow-hidden border border-neutral-200 bg-white"><img src="${escapeHtml(mainUrl)}" class="w-full h-44 object-cover"></div>`
+    : '<div class="rounded-xl border border-dashed border-neutral-300 h-24 flex items-center justify-center text-sm text-neutral-400">Bez hlavního obrázku</div>';
+
+  const list = el('galleryImagesList');
+  list.innerHTML = '';
+  const gallery = Array.isArray(state.currentGalleryImages) ? state.currentGalleryImages : [];
+
+  if (!gallery.length) {
+    list.innerHTML = '<div class="text-sm text-neutral-500">Galerie je prázdná.</div>';
+    return;
+  }
+
+  gallery.forEach((url, index) => {
+    const row = document.createElement('div');
+    row.className = 'flex items-center gap-2 rounded-xl border border-neutral-200 bg-white p-2';
+    row.innerHTML = `
+      <div class="w-14 h-14 rounded-lg overflow-hidden bg-neutral-100 border border-neutral-200 shrink-0">
+        ${url ? `<img src="${escapeHtml(url)}" class="w-full h-full object-cover">` : '<div class="w-full h-full flex items-center justify-center text-xs text-neutral-400">IMG</div>'}
+      </div>
+      <input value="${escapeHtml(url)}" data-gallery-index="${index}" class="flex-1 rounded-lg border border-neutral-300 px-2 py-1 text-sm">
+      <button data-gallery-remove="${index}" class="px-2 py-1 text-sm rounded-lg border border-red-300 text-red-600 hover:bg-red-50">🗑</button>
+    `;
+    list.appendChild(row);
+  });
+
+  list.querySelectorAll('[data-gallery-index]').forEach(input => {
+    input.addEventListener('input', (e) => {
+      const idx = Number(e.target.getAttribute('data-gallery-index'));
+      state.currentGalleryImages[idx] = e.target.value;
+      renderImageSection(product);
+    });
+  });
+  list.querySelectorAll('[data-gallery-remove]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const idx = Number(btn.getAttribute('data-gallery-remove'));
+      state.currentGalleryImages.splice(idx, 1);
+      renderImageSection(product);
+    });
+  });
+}
+
+function normalizeVariant(variant = {}, fallbackIndex = 0) {
+  return {
+    id: variant.id || `v-${Date.now()}-${fallbackIndex}`,
+    external_id: variant.external_id || null,
+    label: variant.label || variant.name || '',
+    sku: variant.sku || '',
+    price: variant.price || variant.regular_price || '',
+    sale_price: variant.sale_price || variant.salePrice || '',
+    stock: variant.stock || '',
+    stock_status: variant.stock_status || 'instock',
+    attributes: variant.attributes || {},
+    is_active: variant.is_active ?? 1,
+    virtual: Boolean(variant.virtual),
+    downloadable: Boolean(variant.downloadable)
+  };
+}
+
+function renderVariantsTable(variants) {
+  state.currentVariants = Array.isArray(variants) ? variants.map((variant, index) => normalizeVariant(variant, index)) : [];
+  const wrap = el('variantsTable');
+  if (!state.currentVariants.length) {
+    wrap.innerHTML = '<div class="px-4 py-6 text-sm text-neutral-500">Zatím nejsou žádné varianty.</div>';
+    return;
+  }
+
+  let html = `
+    <div class="overflow-x-auto">
+      <table class="min-w-full text-sm">
+        <thead class="bg-neutral-50 text-xs font-semibold uppercase tracking-wide text-neutral-500">
+          <tr>
+            <th class="px-4 py-3 text-left">Varianta</th>
+            <th class="px-4 py-3 text-left">SKU</th>
+            <th class="px-4 py-3 text-left">Cena</th>
+            <th class="px-4 py-3 text-left">Akční cena</th>
+            <th class="px-4 py-3 text-left">Sklad</th>
+            <th class="px-4 py-3 text-left">Virtuál</th>
+            <th class="px-4 py-3 text-left">Download</th>
+            <th class="px-4 py-3 text-right">Akce</th>
+          </tr>
+        </thead>
+        <tbody>
+  `;
+
+  state.currentVariants.forEach((variant, index) => {
+    html += `
+      <tr class="border-t border-neutral-100 align-middle">
+        <td class="px-4 py-3 min-w-[220px]"><input data-v-field="label" data-v-index="${index}" value="${escapeHtml(variant.label || '')}" class="w-full rounded-lg border border-neutral-300 px-2 py-1.5 text-sm"></td>
+        <td class="px-4 py-3 min-w-[160px]"><input data-v-field="sku" data-v-index="${index}" value="${escapeHtml(variant.sku || '')}" class="w-full rounded-lg border border-neutral-300 px-2 py-1.5 text-sm"></td>
+        <td class="px-4 py-3 min-w-[120px]"><input data-v-field="price" data-v-index="${index}" value="${escapeHtml(variant.price || '')}" class="w-full rounded-lg border border-neutral-300 px-2 py-1.5 text-sm"></td>
+        <td class="px-4 py-3 min-w-[120px]"><input data-v-field="sale_price" data-v-index="${index}" value="${escapeHtml(variant.sale_price || '')}" class="w-full rounded-lg border border-neutral-300 px-2 py-1.5 text-sm"></td>
+        <td class="px-4 py-3 min-w-[110px]"><input data-v-field="stock" data-v-index="${index}" value="${escapeHtml(variant.stock || '')}" class="w-full rounded-lg border border-neutral-300 px-2 py-1.5 text-sm"></td>
+        <td class="px-4 py-3 whitespace-nowrap"><label class="inline-flex items-center gap-2 text-xs"><input data-v-field="virtual" data-v-index="${index}" type="checkbox" class="rounded border-neutral-300" ${variant.virtual ? 'checked' : ''}><span>Ano</span></label></td>
+        <td class="px-4 py-3 whitespace-nowrap"><label class="inline-flex items-center gap-2 text-xs"><input data-v-field="downloadable" data-v-index="${index}" type="checkbox" class="rounded border-neutral-300" ${variant.downloadable ? 'checked' : ''}><span>Ano</span></label></td>
+        <td class="px-4 py-3 text-right"><button type="button" data-v-remove="${index}" class="px-2 py-1 text-sm rounded-lg border border-red-300 text-red-600 hover:bg-red-50">🗑</button></td>
+      </tr>
+    `;
+  });
+
+  html += '</tbody></table></div>';
+  wrap.innerHTML = html;
+
+  wrap.querySelectorAll('[data-v-remove]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const index = Number(btn.getAttribute('data-v-remove'));
+      state.currentVariants.splice(index, 1);
+      renderVariantsTable(state.currentVariants);
+    });
+  });
+}
+
+function toggleVariantArea() {
+
+  const type = el('p_type').value;
+  el('simplePanel').classList.toggle('hidden', type === 'variable');
+  el('variablePanel').classList.toggle('hidden', type !== 'variable');
+}
+
+function collectVariants() {
+  const grouped = {};
+  document.querySelectorAll('[data-v-field]').forEach(field => {
+    const idx = Number(field.dataset.vIndex);
+    const name = field.dataset.vField;
+    if (!grouped[idx]) {
+      grouped[idx] = normalizeVariant(state.currentVariants[idx] || {}, idx);
+    }
+    grouped[idx][name] = field.type === 'checkbox' ? field.checked : field.value;
+  });
+  return Object.values(grouped).map((variant, index) => normalizeVariant(variant, index)).filter(variant => {
+    return variant.label || variant.sku || variant.price || variant.sale_price || variant.stock;
+  });
+}
+
+function addVariantRow() {
+  const variants = collectVariants();
+  variants.push(normalizeVariant({}, variants.length));
+  renderVariantsTable(variants);
+}
+
+function generateVariants() {
+  const a1Values = el('attr1_values').value.split(',').map(v => v.trim()).filter(Boolean);
+  const a2Values = el('attr2_values').value.split(',').map(v => v.trim()).filter(Boolean);
+  const baseSku = el('p_sku').value.trim();
+  let combos = [];
+  if (a1Values.length && a2Values.length) a1Values.forEach(v1 => a2Values.forEach(v2 => combos.push(`${v1} / ${v2}`)));
+  else if (a1Values.length) combos = a1Values.slice();
+  else if (a2Values.length) combos = a2Values.slice();
+
+  const existing = collectVariants();
+  const existingMap = new Map(existing.map((variant, index) => [String(variant.label || '').trim().toLowerCase(), normalizeVariant(variant, index)]));
+  const generated = combos.map((label, index) => {
+    const key = String(label).trim().toLowerCase();
+    if (existingMap.has(key)) return existingMap.get(key);
+    const parts = label.split(' / ');
+    const attributes = {};
+    if (el('attr1_name').value.trim() && parts[0]) attributes[el('attr1_name').value.trim()] = parts[0];
+    if (el('attr2_name').value.trim() && parts[1]) attributes[el('attr2_name').value.trim()] = parts[1];
+    return normalizeVariant({
+      label,
+      sku: baseSku ? `${baseSku}-${index + 1}` : '',
+      price: '',
+      sale_price: '',
+      stock: '',
+      virtual: false,
+      downloadable: false,
+      attributes
+    }, index);
+  });
+
+  renderVariantsTable(generated);
+}
+
+function openCategoryModal(categoryId = null, parentId = null) {
+  state.editingCategoryId = categoryId;
+  const category = categoryId ? getCategoryById(categoryId) : null;
+  populateCategoryParentSelect(categoryId);
+  el('categoryModalTitle').textContent = categoryId ? 'Upravit kategorii' : 'Nová kategorie';
+  el('cat_name').value = category?.name || '';
+  el('cat_slug').value = category?.slug || '';
+  el('cat_parent').value = category ? (category.parentId ?? category.parent_id ?? '') : (parentId || '');
+  el('cat_sort_order').value = category?.sort_order ?? 0;
+  el('cat_is_active').value = String(category?.is_active ?? 1);
+  el('cat_description').value = category?.description || '';
+  el('cat_image').value = category?.image || '';
+  el('deleteCategoryBtn').classList.toggle('hidden', !categoryId);
+  el('categoryModal').classList.remove('hidden');
+  el('categoryModal').classList.add('flex');
+}
+
+function closeCategoryModal() {
+  el('categoryModal').classList.add('hidden');
+  el('categoryModal').classList.remove('flex');
+  state.editingCategoryId = null;
+}
+
+async function openProductModal(productId = null) {
+  state.editingProductId = productId;
+  let product = productId
+    ? state.products.find(item => Number(item.id) === Number(productId))
+    : (state.productDuplicateDraft ? JSON.parse(JSON.stringify(state.productDuplicateDraft)) : null);
+  if (productId) {
+    try {
+      const detail = await api(`/api/v2/products/${productId}`);
+      product = detail.data;
+      const position = state.products.findIndex(item => Number(item.id) === Number(productId));
+      if (position >= 0) state.products[position] = product;
+    } catch (err) {
+      toast(err.message || 'Detail produktu se nepodařilo načíst.', 'error');
+      return;
+    }
+  }
+  el('productModalTitle').textContent = productId ? 'Upravit produkt' : 'Nový produkt';
+  el('deleteProductBtn').classList.toggle('hidden', !productId);
+
+  el('p_name').value = product?.name || '';
+  el('p_slug').value = product?.slug || '';
+  el('p_sku').value = product?.sku || '';
+  el('p_type').value = product?.type || 'simple';
+  el('p_status').value = product?.status || 'draft';
+  setEditorHtml('short_description', product?.shortDescription || '');
+  setEditorHtml('description', product?.description || '');
+  setEditorMode('short_description', 'visual');
+  setEditorMode('description', 'visual');
+  el('p_price').value = product?.regularPrice || '';
+  el('p_sale_price').value = product?.salePrice || '';
+  el('p_stock').value = product?.stock || '';
+  el('p_image').value = product?.image || '';
+  el('p_virtual').checked = Boolean(product?.virtual);
+  el('p_downloadable').checked = Boolean(product?.downloadable);
+  el('p_manage_stock').checked = Boolean(product?.manage_stock ?? true);
+  el('p_stock_status').value = product?.stock_status || 'instock';
+  el('p_supplier').value = product?.supplier || '';
+  el('p_purchase_price').value = product?.purchase_price || '';
+  el('p_weight').value = product?.weight || '';
+  el('p_length').value = product?.length || '';
+  el('p_width').value = product?.width || '';
+  el('p_height').value = product?.height || '';
+
+  const attrs = product?.attributes || {};
+  const attrList = Array.isArray(attrs) ? attrs : [];
+  el('attr1_name').value = attrs.attr1Name || attrList[0]?.name || '';
+  el('attr1_values').value = attrs.attr1Values || (attrList[0]?.options || []).join(', ');
+  el('attr2_name').value = attrs.attr2Name || attrList[1]?.name || '';
+  el('attr2_values').value = attrs.attr2Values || (attrList[1]?.options || []).join(', ');
+
+  const selectedIds = product?.categoryIds?.map(Number) || (state.selectedCategoryId ? [Number(state.selectedCategoryId)] : []);
+  renderProductCategoryChecklist(selectedIds);
+  const modalVariants = (product?.variants || []).map(variant => {
+    if (!attrList.length || !variant?.attributes || Array.isArray(variant.attributes)) return variant;
+    const values = Object.values(variant.attributes);
+    const normalizedAttributes = {};
+    attrList.slice(0, 2).forEach((attribute, index) => {
+      if (attribute?.name && values[index] !== undefined) normalizedAttributes[attribute.name] = values[index];
+    });
+    return {...variant, attributes: normalizedAttributes};
+  });
+  renderVariantsTable(modalVariants);
+  state.currentGalleryImages = Array.isArray(product?.galleryImages) ? [...product.galleryImages] : [];
+  renderImageSection(product);
+  toggleVariantArea();
+
+  el('productModal').classList.remove('hidden');
+  el('productModal').classList.add('flex');
+}
+
+function closeProductModal() {
+  el('productModal').classList.add('hidden');
+  el('productModal').classList.remove('flex');
+  state.editingProductId = null;
+  state.currentGalleryImages = [];
+  state.currentVariants = [];
+  state.productDuplicateDraft = null;
+}
+
+function showConfirm(title, message, callback) {
+  state.confirmCallback = callback;
+  el('confirmTitle').textContent = title;
+  el('confirmMessage').textContent = message;
+  el('confirmModal').classList.remove('hidden');
+  el('confirmModal').classList.add('flex');
+}
+
+function closeConfirmModal() {
+  state.confirmCallback = null;
+  el('confirmModal').classList.add('hidden');
+  el('confirmModal').classList.remove('flex');
+}
+
+async function login() {
+  const button = el('loginBtn');
+  try {
+    el('loginError').classList.add('hidden');
+    const email = el('email').value.trim();
+    const password = el('password').value;
+    if (!email || !password) throw new Error('Vyplň e-mail i heslo.');
+    button.disabled = true;
+    button.textContent = 'Přihlašuji…';
+    await resolveApiBase();
+
+    const res = await fetch(apiUrl('/api/v2/auth/login'), {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      credentials: 'same-origin',
+      body: JSON.stringify({
+        email,
+        password,
+        store_id: null
+      })
+    });
+
+    const raw = await res.text();
+    let data = {};
+    try { data = raw ? JSON.parse(raw) : {}; } catch (_) {}
+    if (!res.ok || !data.success) {
+      let message = data.message || data.error || '';
+      if (!message && res.status === 401) message = 'E-mail nebo heslo nejsou správné.';
+      if (!message && res.status === 404) message = 'Přihlašovací API nebylo na serveru nalezeno.';
+      if (!message && res.status === 500) message = 'Server Viki není správně nakonfigurován. Zkontroluj soubor .env a připojení k databázi.';
+      throw new Error(message || `Přihlášení selhalo (HTTP ${res.status}).`);
+    }
+
+    state.token = data.data.token;
+    saveSession();
+    await bootstrap();
+  } catch (err) {
+    el('loginError').textContent = err.message || 'Přihlášení se nezdařilo.';
+    el('loginError').classList.remove('hidden');
+  } finally {
+    button.disabled = false;
+    button.textContent = 'Přihlásit';
+  }
+}
+
+async function loadProducts(render = true) {
+  const params = new URLSearchParams({
+    page: String(state.pagination.page || 1),
+    limit: String(state.pagination.pageSize || 50),
+    sort: 'updated_at',
+    direction: 'desc'
+  });
+  if (state.q.trim()) params.set('q', state.q.trim());
+  if (state.selectedCategoryId) params.set('category_id', String(state.selectedCategoryId));
+  const response = await api(`/api/v2/products?${params.toString()}`);
+  state.products = response.data.items || [];
+  const meta = response.data.pagination || {};
+  state.pagination.page = Number(meta.page || 1);
+  state.pagination.total = Number(meta.total || 0);
+  state.pagination.pages = Math.max(1, Number(meta.pages || 1));
+  if (!state.q.trim() && !state.selectedCategoryId) state.catalogTotal = state.pagination.total;
+  if (render) renderAll();
+}
+
+async function bootstrap(silent = false) {
+  try {
+    const [me, stores, perms, cats] = await Promise.all([
+      api('/api/v2/auth/me'),
+      api('/api/v2/stores'),
+      api('/api/v2/permissions'),
+      api('/api/v2/categories?tree=0')
+    ]);
+
+    state.me = me.data;
+    state.stores = stores.data.items || stores.data || [];
+    state.permissions = perms.data.permissions || perms.data || [];
+    state.categories = cats.data.items || [];
+    await loadProducts(false);
+
+    renderApp();
+    if (!silent) toast('Data byla načtena.', 'info');
+    if (state.health?.configuration?.app_key_secure === false) {
+      toast('Bezpečnostní upozornění: v .env nastav nový APP_KEY s alespoň 32 náhodnými znaky.', 'error', 10000);
+    }
+  } catch (err) {
+    clearSession();
+    el('loginError').textContent = err.message || 'Načtení aplikace selhalo.';
+    el('loginError').classList.remove('hidden');
+    el('loginView').classList.remove('hidden');
+    el('appView').classList.add('hidden');
+  }
+}
+
+
+function initSidebarResizer() {
+  const sidebar = el('catalogSidebar');
+  const splitter = el('catalogSplitter');
+  const label = el('sidebarWidthLabel');
+  if (!sidebar || !splitter) return;
+  if (splitter.dataset.bound === '1') {
+    const currentWidth = parseInt(sidebar.style.width || state.sidebarWidth || 340, 10);
+    if (label) label.textContent = `${currentWidth} px`;
+    return;
+  }
+
+  const minWidth = 260;
+  const maxWidth = 720;
+  const applyWidth = (width) => {
+    const safe = Math.max(minWidth, Math.min(maxWidth, Math.round(width || 340)));
+    sidebar.style.width = `${safe}px`;
+    state.sidebarWidth = safe;
+    if (label) label.textContent = `${safe} px`;
+    try { localStorage.setItem('feedhub_sidebar_width', String(safe)); } catch (e) {}
+  };
+
+  const initial = Number(localStorage.getItem('feedhub_sidebar_width') || state.sidebarWidth || 340);
+  applyWidth(initial);
+
+  splitter.dataset.bound = '1';
+  splitter.addEventListener('mousedown', (event) => {
+    event.preventDefault();
+    splitter.classList.add('is-dragging');
+    document.body.classList.add('select-none-force');
+
+    const onMove = (moveEvent) => applyWidth(moveEvent.clientX);
+    const onUp = () => {
+      splitter.classList.remove('is-dragging');
+      document.body.classList.remove('select-none-force');
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+    };
+
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+  });
+}
+
+function renderActiveStoreBrand() {
+  const store = state.me?.current_store || {};
+  const activeStore = (state.stores || []).find(item => Number(item.id) === Number(store.id)) || store || {};
+
+  const logoUrl = String(activeStore.logo_url || '').trim();
+
+  const logoWrap = el('activeStoreBrandLogoWrap');
+  const logoImg = el('activeStoreBrandLogo');
+  const textWrap = el('activeStoreBrandText');
+
+  if (logoUrl) {
+    logoImg.src = logoUrl;
+    logoImg.alt = activeStore.name ? `Logo ${activeStore.name}` : 'Logo e-shopu';
+    logoWrap.classList.remove('hidden');
+    textWrap.classList.add('hidden');
+    return;
+  }
+
+  logoImg.src = '';
+  logoImg.alt = 'Logo e-shopu';
+  logoWrap.classList.add('hidden');
+  textWrap.classList.remove('hidden');
+}
+
+function renderApp() {
+  el('loginView').classList.add('hidden');
+  el('appView').classList.remove('hidden');
+  const user = state.me?.user || {};
+  const store = state.me?.current_store || {};
+  el('userBadge').textContent = `${user.full_name || user.email || ''} · ${store.name || ''}`;
+  el('userBadge').classList.remove('hidden');
+
+  el('storeSelect').innerHTML = state.stores.map(storeItem => `<option value="${storeItem.id}" ${Number(storeItem.id) === Number(store.id) ? 'selected' : ''}>${escapeHtml(storeItem.name)}</option>`).join('');
+  renderActiveStoreBrand();
+  initSidebarResizer();
+  renderAll();
+}
+
+function renderAll() {
+  renderSelectedCategoryHeader();
+  renderCategoryTree();
+  renderProducts();
+  updateCatalogFooter();
+}
+
+async function saveCategory() {
+  try {
+    const name = el('cat_name').value.trim();
+    if (!name) throw new Error('Název kategorie je povinný.');
+
+    const parentId = el('cat_parent').value ? Number(el('cat_parent').value) : null;
+    if (state.editingCategoryId && parentId && isDescendant(parentId, state.editingCategoryId)) {
+      throw new Error('Neplatná nadřazená kategorie.');
+    }
+
+    const payload = {
+      name,
+      slug: el('cat_slug').value.trim() || slugify(name),
+      parentId,
+      description: el('cat_description').value.trim(),
+      image: el('cat_image').value.trim(),
+      sort_order: Number(el('cat_sort_order').value || 0),
+      is_active: Number(el('cat_is_active').value || 1)
+    };
+
+    if (state.editingCategoryId) {
+      await api(`/api/v2/categories/${state.editingCategoryId}`, { method: 'PUT', body: JSON.stringify(payload) });
+      toast('Kategorie byla upravena.');
+    } else {
+      await api('/api/v2/categories', { method: 'POST', body: JSON.stringify(payload) });
+      toast('Kategorie byla vytvořena.');
+    }
+
+    closeCategoryModal();
+    await bootstrap(true);
+  } catch (err) {
+    toast(err.message || 'Uložení kategorie selhalo.', 'error');
+  }
+}
+
+async function saveCategoryOrder(categoryId, parentId, sortOrder, beforeId = null) {
+  await api('/api/v2/categories/reorder', {
+    method: 'POST',
+    body: JSON.stringify({
+      id: Number(categoryId),
+      parent_id: parentId === null || parentId === '' ? null : Number(parentId),
+      before_id: beforeId === null || beforeId === '' ? null : Number(beforeId),
+      sort_order: Number(sortOrder || 0)
+    })
+  });
+}
+
+function getNextSortOrder(parentId) {
+  const siblings = state.categories.filter(cat => Number(cat.parentId ?? cat.parent_id ?? 0) === Number(parentId ?? 0) || ((cat.parentId ?? cat.parent_id ?? null) === null && parentId === null));
+  if (!siblings.length) return 0;
+  return Math.max(...siblings.map(cat => Number(cat.sort_order ?? 0))) + 10;
+}
+
+async function confirmDeleteCategory(id) {
+  showConfirm('Smazat kategorii', 'Skutečně chcete tuto kategorii smazat?', async () => {
+    try {
+      await api(`/api/v2/categories/${id}/delete`, { method: 'POST' });
+      if (Number(state.selectedCategoryId) === Number(id)) state.selectedCategoryId = null;
+      toast('Kategorie byla smazána.');
+      closeCategoryModal();
+      await bootstrap(true);
+    } catch (err) {
+      toast(err.message || 'Smazání kategorie selhalo.', 'error');
+    }
+  });
+}
+
+async function saveProduct() {
+  try {
+    const name = el('p_name').value.trim();
+    if (!name) throw new Error('Název produktu je povinný.');
+
+    const categoryIds = [...document.querySelectorAll('#productCategoryChecklist input[type="checkbox"]:checked')].map(node => Number(node.value));
+    const type = el('p_type').value;
+
+    const payload = {
+      name,
+      slug: el('p_slug').value.trim() || slugify(name),
+      sku: el('p_sku').value.trim(),
+      type,
+      status: el('p_status').value,
+      shortDescription: getEditorHtml('short_description'),
+      description: getEditorHtml('description'),
+      regularPrice: el('p_price').value,
+      salePrice: el('p_sale_price').value,
+      stock: el('p_stock').value,
+      virtual: el('p_virtual').checked,
+      downloadable: el('p_downloadable').checked,
+      manage_stock: el('p_manage_stock').checked,
+      stock_status: el('p_stock_status').value,
+      supplier: el('p_supplier').value.trim(),
+      purchase_price: el('p_purchase_price').value,
+      weight: el('p_weight').value,
+      length: el('p_length').value,
+      width: el('p_width').value,
+      height: el('p_height').value,
+      categoryIds,
+      category_id: categoryIds[0] || null,
+      image: el('p_image').value.trim(),
+      galleryImages: state.currentGalleryImages.filter(Boolean),
+      attributes: {
+        attr1Name: el('attr1_name').value.trim(),
+        attr1Values: el('attr1_values').value.trim(),
+        attr2Name: el('attr2_name').value.trim(),
+        attr2Values: el('attr2_values').value.trim()
+      },
+      variants: type === 'variable' ? collectVariants() : []
+    };
+
+    if (state.editingProductId) {
+      await api(`/api/v2/products/${state.editingProductId}`, { method: 'PUT', body: JSON.stringify(payload) });
+      toast('Produkt byl upraven.');
+    } else {
+      await api('/api/v2/products', { method: 'POST', body: JSON.stringify(payload) });
+      toast('Produkt byl vytvořen.');
+    }
+
+    closeProductModal();
+    await bootstrap(true);
+  } catch (err) {
+    toast(err.message || 'Uložení produktu selhalo.', 'error');
+  }
+}
+
+function confirmDeleteProduct(id) {
+  showConfirm('Smazat produkt', 'Skutečně chcete tento produkt smazat?', async () => {
+    try {
+      await api(`/api/v2/products/${id}/delete`, { method: 'POST' });
+      state.selectedProductIds = state.selectedProductIds.filter(productId => Number(productId) !== Number(id));
+      toast('Produkt byl smazán.');
+      closeProductModal();
+      await bootstrap(true);
+    } catch (err) {
+      toast(err.message || 'Smazání produktu selhalo.', 'error');
+    }
+  });
+}
+
+async function switchStore() {
+  try {
+    const store_id = Number(el('storeSelect').value);
+    const res = await api('/api/v2/context/store', { method: 'POST', body: JSON.stringify({ store_id }) });
+    state.token = res.data.token;
+    saveSession();
+    state.selectedCategoryId = null;
+    state.selectedProductIds = [];
+    state.q = '';
+    state.catalogTotal = 0;
+    el('productSearch').value = '';
+    await bootstrap(true);
+    toast('Store byl přepnut.');
+  } catch (err) {
+    toast(err.message || 'Přepnutí store selhalo.', 'error');
+  }
+}
+
+function renderBulkToolbar() {
+  const bar = el('bulkToolbar');
+  if (!bar) return;
+
+  const count = Array.isArray(state.selectedProductIds) ? state.selectedProductIds.length : 0;
+  el('bulkCount').textContent = String(count);
+  bar.classList.toggle('hidden', count === 0);
+
+  const select = el('bulkCategorySelect');
+  if (select) {
+    const currentValue = select.value;
+    select.innerHTML = '<option value="">Vyber cílovou kategorii</option>' + state.categories
+      .map(category => `<option value="${category.id}">${escapeHtml(getCategoryPath(category.id))}</option>`)
+      .join('');
+    if ([...select.options].some(option => option.value === currentValue)) {
+      select.value = currentValue;
+    }
+  }
+
+  const selectAll = el('selectAllProducts');
+  if (selectAll) {
+    const visibleIds = getVisibleProducts().map(product => Number(product.id));
+    selectAll.checked = visibleIds.length > 0 && visibleIds.every(id => state.selectedProductIds.includes(id));
+    selectAll.indeterminate = visibleIds.some(id => state.selectedProductIds.includes(id)) && !selectAll.checked;
+  }
+}
+
+async function bulkMoveProducts() {
+  try {
+    const targetId = Number(el('bulkCategorySelect').value);
+    if (!targetId) throw new Error('Vyber cílovou kategorii.');
+    await api('/api/v2/products/bulk/move', {
+      method: 'POST',
+      body: JSON.stringify({ ids: state.selectedProductIds, category_id: targetId })
+    });
+    state.selectedProductIds = [];
+    toast('Vybrané produkty byly přesunuty.');
+    await bootstrap(true);
+  } catch (err) {
+    toast(err.message || 'Hromadný přesun selhal.', 'error');
+  }
+}
+
+function bulkDeleteProducts() {
+  if (!state.selectedProductIds.length) return;
+  showConfirm('Smazat vybrané produkty', 'Skutečně chcete smazat vybrané produkty?', async () => {
+    try {
+      await api('/api/v2/products/bulk/delete', {
+        method: 'POST',
+        body: JSON.stringify({ ids: state.selectedProductIds })
+      });
+      state.selectedProductIds = [];
+      toast('Vybrané produkty byly smazány.');
+      await bootstrap(true);
+    } catch (err) {
+      toast(err.message || 'Hromadné mazání selhalo.', 'error');
+    }
+  });
+}
+
+async function syncProductToWoo(productId, { silent = false } = {}) {
+  const product = state.products.find(item => Number(item.id) === Number(productId));
+  if (!product) {
+    toast('Produkt nebyl nalezen.', 'error');
+    return false;
+  }
+
+  try {
+    const response = await api(`/api/v2/products/${productId}/woo-sync`, { method: 'POST' });
+    const action = response?.data?.plugin_response?.action || 'synced';
+    await bootstrap(true);
+    if (!silent) {
+      toast(`Produkt „${product.name || ''}“ byl synchronizován do Woo (${action}).`);
+    }
+    if (state.editingProductId && Number(state.editingProductId) === Number(productId)) {
+      const refreshed = state.products.find(item => Number(item.id) === Number(productId));
+      if (refreshed) updateProductWooStatus(refreshed);
+    }
+    return true;
+  } catch (err) {
+    if (!silent) {
+      toast(err.message || 'Synchronizace produktu do Woo selhala.', 'error');
+    }
+    await bootstrap(true);
+    return false;
+  }
+}
+
+async function bulkSyncProductsToWoo() {
+  if (!Array.isArray(state.selectedProductIds) || !state.selectedProductIds.length) {
+    toast('Nejdříve vyber produkty pro synchronizaci.', 'error');
+    return;
+  }
+
+  let ok = 0;
+  let failed = 0;
+
+  for (const id of [...state.selectedProductIds]) {
+    const success = await syncProductToWoo(id, { silent: true });
+    if (success) ok += 1;
+    else failed += 1;
+  }
+
+  state.selectedProductIds = [];
+  renderProducts();
+  if (failed > 0) {
+    toast(`Sync do Woo dokončen: ${ok} OK, ${failed} chyb.`, 'info');
+  } else {
+    toast(`Sync do Woo dokončen: ${ok} produktů.`, 'success');
+  }
+}
+
+function updateProductWooStatus(product) {
+  const node = el('productWooStatus');
+  const btn = el('syncWooBtn');
+  if (!node || !btn) return;
+
+  if (!product || !product.id) {
+    node.classList.add('hidden');
+    btn.classList.add('hidden');
+    return;
+  }
+
+  const meta = getWooSyncMeta(product);
+  node.className = `text-xs rounded-full border px-2 py-1 ${meta.rowClass}`;
+  node.textContent = meta.label;
+  node.classList.remove('hidden');
+  btn.classList.remove('hidden');
+  btn.textContent = 'Synchronizovat do Woo';
+  btn.disabled = false;
+  btn.classList.remove('opacity-50', 'cursor-not-allowed');
+}
+
+async function assignProductToCategory(productId, categoryId) {
+  const product = state.products.find(item => Number(item.id) === Number(productId));
+  if (!product) throw new Error('Produkt nebyl nalezen.');
+
+  const targetCategoryId = Number(categoryId);
+  const payload = {
+    name: product.name,
+    slug: product.slug,
+    sku: product.sku,
+    type: product.type,
+    status: product.status,
+    shortDescription: product.shortDescription || '',
+    description: product.description || '',
+    regularPrice: product.regularPrice || '',
+    salePrice: product.salePrice || '',
+    stock: product.stock || '',
+    categoryIds: [targetCategoryId],
+    category_id: targetCategoryId,
+    image: product.image || '',
+    galleryImages: product.galleryImages || [],
+    attributes: product.attributes || {},
+    variants: product.variants || []
+  };
+
+  await api(`/api/v2/products/${productId}`, { method: 'PUT', body: JSON.stringify(payload) });
+
+  const index = state.products.findIndex(item => Number(item.id) === Number(productId));
+  if (index >= 0) {
+    state.products[index] = {
+      ...state.products[index],
+      categoryIds: [targetCategoryId],
+      category_id: targetCategoryId
+    };
+  }
+
+  state.selectedProductIds = state.selectedProductIds.filter(id => Number(id) !== Number(productId));
+  toast('Produkt byl přesunut do vybrané kategorie.');
+  await bootstrap(true);
+}
+
+function createBackup() {
+  const snapshot = {
+    createdAt: new Date().toISOString(),
+    categories: state.categories,
+    products: state.products,
+    selectedCategoryId: state.selectedCategoryId
+  };
+  localStorage.setItem(storageKeys.backup, JSON.stringify(snapshot));
+  toast('Lokální záloha byla vytvořena.');
+}
+
+function restoreBackup() {
+  const raw = localStorage.getItem(storageKeys.backup);
+  if (!raw) {
+    toast('Zatím neexistuje žádná záloha.', 'error');
+    return;
+  }
+  const backup = JSON.parse(raw);
+  showConfirm('Obnovit poslední zálohu', 'Obnova přepíše aktuální katalog daty z lokální zálohy. Pokračovat?', async () => {
+    try {
+      if (backup.categories?.length) {
+        for (const category of backup.categories) {
+          await api(`/api/v2/categories/${category.id}`, {
+            method: 'PUT',
+            body: JSON.stringify({
+              name: category.name,
+              slug: category.slug,
+              parentId: category.parentId ?? category.parent_id ?? null,
+              description: category.description || '',
+              image: category.image || '',
+              sort_order: Number(category.sort_order || 0),
+              is_active: Number(category.is_active ?? 1)
+            })
+          }).catch(() => null);
+        }
+      }
+      if (backup.products?.length) {
+        for (const product of backup.products) {
+          await api(`/api/v2/products/${product.id}`, {
+            method: 'PUT',
+            body: JSON.stringify({
+              name: product.name,
+              slug: product.slug,
+              sku: product.sku,
+              type: product.type,
+              status: product.status,
+              shortDescription: product.shortDescription || '',
+              description: product.description || '',
+              regularPrice: product.regularPrice || '',
+              salePrice: product.salePrice || '',
+              stock: product.stock || '',
+              categoryIds: product.categoryIds || [],
+              category_id: product.category_id || (product.categoryIds || [])[0] || null,
+              image: product.image || '',
+              galleryImages: product.galleryImages || [],
+              attributes: product.attributes || {},
+              variants: product.variants || []
+            })
+          }).catch(() => null);
+        }
+      }
+      toast('Lokální záloha byla reaplikována na backend.');
+      await bootstrap(true);
+    } catch (err) {
+      toast(err.message || 'Obnova zálohy selhala.', 'error');
+    }
+  });
+}
+
+function openImportModal() {
+  el('importModal').classList.remove('hidden');
+  el('importModal').classList.add('flex');
+  el('importSummary').innerHTML = '<div class="text-sm text-neutral-600">Nahraj XML soubor pro náhled.</div>';
+  state.pendingImportData = null;
+  state.pendingImportSummary = null;
+}
+
+function closeImportModal() {
+  el('importModal').classList.add('hidden');
+  el('importModal').classList.remove('flex');
+}
+
+function selectedImportMode() {
+  return document.querySelector('input[name="importMode"]:checked').value;
+}
+
+function textContent(node, selector) {
+  const found = node.querySelector(selector);
+  return found ? found.textContent.trim() : '';
+}
+
+function metaMap(item) {
+  const out = {};
+  item.querySelectorAll('wp\\:postmeta, postmeta').forEach(pm => {
+    const k = textContent(pm, 'wp\\:meta_key, meta_key');
+    const v = textContent(pm, 'wp\\:meta_value, meta_value');
+    out[k] = v;
+  });
+  return out;
+}
+
+function parseWordPressXml(xmlText) {
+  const parser = new DOMParser();
+  const xml = parser.parseFromString(xmlText, 'application/xml');
+  if (xml.querySelector('parsererror')) throw new Error('Invalid XML');
+
+  const items = [...xml.querySelectorAll('item')];
+  const attachmentMap = {};
+  items.forEach(item => {
+    const postType = textContent(item, 'wp\\:post_type, post_type');
+    if (postType === 'attachment') {
+      const id = Number(textContent(item, 'wp\\:post_id, post_id'));
+      const url = textContent(item, 'wp\\:attachment_url, attachment_url') || textContent(item, 'guid');
+      attachmentMap[id] = url;
+    }
+  });
+
+  const categories = [];
+  const categoryIndex = new Map();
+  items.forEach(item => {
+    const postType = textContent(item, 'wp\\:post_type, post_type');
+    if (postType !== 'product') return;
+    item.querySelectorAll('category').forEach(catNode => {
+      if ((catNode.getAttribute('domain') || '') !== 'product_cat') return;
+      const name = catNode.textContent.trim();
+      const slug = (catNode.getAttribute('nicename') || slugify(name)).trim();
+      if (!categoryIndex.has(slug)) {
+        const id = categories.length ? Math.max(...categories.map(c => c.id)) + 1 : 1;
+        categories.push({ id, name, slug, parentId: null, description: '', image: '', sort_order: 0, is_active: 1 });
+        categoryIndex.set(slug, id);
+      }
+    });
+  });
+
+  const products = [];
+  items.forEach(item => {
+    const postType = textContent(item, 'wp\\:post_type, post_type');
+    if (postType !== 'product') return;
+    const meta = metaMap(item);
+
+    const categoryIds = [...item.querySelectorAll('category')]
+      .filter(node => (node.getAttribute('domain') || '') === 'product_cat')
+      .map(node => categoryIndex.get((node.getAttribute('nicename') || slugify(node.textContent.trim())).trim()))
+      .filter(Boolean);
+
+    const thumbId = Number(meta['_thumbnail_id'] || 0);
+    const galleryIds = (meta['_product_image_gallery'] || '').split(',').map(v => Number(v.trim())).filter(Boolean);
+    const mainImage = attachmentMap[thumbId] || attachmentMap[galleryIds[0]] || '';
+    const galleryImages = galleryIds.map(id => attachmentMap[id]).filter(Boolean);
+
+    products.push({
+      id: Number(textContent(item, 'wp\\:post_id, post_id')) || 0,
+      name: textContent(item, 'title'),
+      slug: textContent(item, 'wp\\:post_name, post_name'),
+      sku: meta['_sku'] || '',
+      type: item.querySelector('category[domain="product_type"]')?.getAttribute('nicename') || 'simple',
+      status: textContent(item, 'wp\\:status, status') || 'publish',
+      shortDescription: stripHtml(textContent(item, 'excerpt\\:encoded, encoded') || ''),
+      description: stripHtml(textContent(item, 'content\\:encoded, encoded') || ''),
+      regularPrice: meta['_regular_price'] || '',
+      salePrice: meta['_sale_price'] || '',
+      stock: meta['_stock'] || '',
+      categoryIds,
+      category_id: categoryIds[0] || null,
+      image: mainImage,
+      galleryImages,
+      variants: [],
+      attributes: {}
+    });
+  });
+
+  return { categories, products };
+}
+
+function buildImportSummary(data) {
+  const currentCategorySlugs = new Set(state.categories.map(category => category.slug));
+  const currentProductIds = new Set(state.products.map(product => product.id));
+  const currentProductSignatures = new Map(state.products.map(product => [product.id, JSON.stringify({
+    name: product.name,
+    slug: product.slug,
+    regularPrice: product.regularPrice,
+    salePrice: product.salePrice,
+    image: product.image,
+    categoryIds: product.categoryIds
+  })]));
+
+  let newCategories = 0;
+  data.categories.forEach(category => { if (!currentCategorySlugs.has(category.slug)) newCategories += 1; });
+
+  let newProducts = 0;
+  let changedProducts = 0;
+  data.products.forEach(product => {
+    if (!currentProductIds.has(product.id)) newProducts += 1;
+    else {
+      const signature = JSON.stringify({
+        name: product.name,
+        slug: product.slug,
+        regularPrice: product.regularPrice,
+        salePrice: product.salePrice,
+        image: product.image,
+        categoryIds: product.categoryIds
+      });
+      if (currentProductSignatures.get(product.id) !== signature) changedProducts += 1;
+    }
+  });
+
+  const importIds = new Set(data.products.map(product => product.id));
+  let missingProducts = 0;
+  state.products.forEach(product => {
+    if (!importIds.has(product.id)) missingProducts += 1;
+  });
+
+  return {
+    importCategories: data.categories.length,
+    importProducts: data.products.length,
+    currentCategories: state.categories.length,
+    currentProducts: state.products.length,
+    newCategories,
+    newProducts,
+    changedProducts,
+    missingProducts
+  };
+}
+
+function renderImportSummary() {
+  if (!state.pendingImportSummary) return;
+  const s = state.pendingImportSummary;
+  el('importSummary').innerHTML = `
+    <div class="grid grid-cols-2 gap-4 text-sm">
+      <div class="rounded-xl border border-neutral-200 p-3 bg-neutral-50">
+        <div class="font-medium mb-1">Import</div>
+        <div>Kategorie: <strong>${s.importCategories}</strong></div>
+        <div>Produkty: <strong>${s.importProducts}</strong></div>
+      </div>
+      <div class="rounded-xl border border-neutral-200 p-3 bg-neutral-50">
+        <div class="font-medium mb-1">Současný stav</div>
+        <div>Kategorie: <strong>${s.currentCategories}</strong></div>
+        <div>Produkty: <strong>${s.currentProducts}</strong></div>
+      </div>
+    </div>
+    <div class="mt-4 rounded-xl border border-neutral-200 p-3 bg-white text-sm">
+      <div class="font-medium mb-2">Náhled změn</div>
+      <div>Nové kategorie: <strong>${s.newCategories}</strong></div>
+      <div>Nové produkty: <strong>${s.newProducts}</strong></div>
+      <div>Změněné produkty: <strong>${s.changedProducts}</strong></div>
+      <div>Produkty chybějící v importu: <strong>${s.missingProducts}</strong></div>
+    </div>
+  `;
+}
+
+function handleImportFile(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  openImportModal();
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      state.pendingImportData = parseWordPressXml(reader.result);
+      state.pendingImportSummary = buildImportSummary(state.pendingImportData);
+      renderImportSummary();
+    } catch (err) {
+      console.error(err);
+      el('importSummary').innerHTML = '<div class="text-sm text-red-600">Import se nepodařilo načíst.</div>';
+    }
+  };
+  reader.readAsText(file, 'utf-8');
+  event.target.value = '';
+}
+
+async function doApplyImport(mode) {
+  toast('Lokální XML import je v 0.8 vypnutý. Použij zabezpečený Viki Connector v Nastavení → E-shopy.', 'info');
+  return;
+  createBackup();
+  try {
+    if (mode === 'replace') {
+      for (const product of [...state.products]) {
+        await api(`/api/v2/products/${product.id}`, { method: 'DELETE' }).catch(() => null);
+      }
+      const categoryIds = [...state.categories].sort((a, b) => Number(b.id) - Number(a.id));
+      for (const category of categoryIds) {
+        await api(`/api/v2/categories/${category.id}`, { method: 'DELETE' }).catch(() => null);
+      }
+    }
+
+    const categorySlugMap = new Map(state.categories.map(category => [category.slug, category]));
+    const importedCategoryIdMap = new Map();
+
+    for (const category of state.pendingImportData.categories) {
+      const existing = categorySlugMap.get(category.slug);
+      if (existing && mode !== 'replace' && mode !== 'initial') {
+        importedCategoryIdMap.set(category.id, existing.id);
+        continue;
+      }
+
+      const created = await api('/api/v2/categories', {
+        method: 'POST',
+        body: JSON.stringify({
+          name: category.name,
+          slug: category.slug,
+          parentId: null,
+          description: category.description || '',
+          image: category.image || '',
+          sort_order: Number(category.sort_order || 0),
+          is_active: Number(category.is_active ?? 1)
+        })
+      });
+      importedCategoryIdMap.set(category.id, created.data.id);
+    }
+
+    for (const product of state.pendingImportData.products) {
+      const payload = {
+        name: product.name,
+        slug: product.slug || slugify(product.name),
+        sku: product.sku || '',
+        type: product.type || 'simple',
+        status: product.status || 'draft',
+        shortDescription: product.shortDescription || '',
+        description: product.description || '',
+        regularPrice: product.regularPrice || '',
+        salePrice: product.salePrice || '',
+        stock: product.stock || '',
+        categoryIds: (product.categoryIds || []).map(id => importedCategoryIdMap.get(id)).filter(Boolean),
+        category_id: ((product.categoryIds || []).map(id => importedCategoryIdMap.get(id)).filter(Boolean))[0] || null,
+        image: product.image || '',
+        galleryImages: product.galleryImages || [],
+        attributes: product.attributes || {},
+        variants: product.variants || []
+      };
+
+      const existing = state.products.find(item => Number(item.id) === Number(product.id));
+      if (existing && mode === 'update') {
+        await api(`/api/v2/products/${existing.id}`, { method: 'PUT', body: JSON.stringify(payload) });
+      } else {
+        await api('/api/v2/products', { method: 'POST', body: JSON.stringify(payload) });
+      }
+    }
+
+    closeImportModal();
+    toast('Import byl aplikován.');
+    await bootstrap(true);
+  } catch (err) {
+    toast(err.message || 'Import selhal.', 'error');
+  }
+}
+
+function applyPendingImport() {
+  toast('Lokální XML import je v 0.8 vypnutý. Použij zabezpečený Viki Connector v Nastavení → E-shopy.', 'info');
+  return;
+  if (!state.pendingImportData) {
+    toast('Nejdříve nahraj XML soubor.', 'error');
+    return;
+  }
+  const mode = selectedImportMode();
+  if (mode === 'replace') {
+    showConfirm('Kompletní přepis katalogu', 'Pozor: dojde ke kompletnímu přepsání katalogu. Pokračovat?', () => doApplyImport(mode));
+    return;
+  }
+  if (mode === 'initial' && (state.categories.length || state.products.length)) {
+    showConfirm('Katalog není prázdný', 'První import je určen primárně pro prázdný katalog. Přesto pokračovat?', () => doApplyImport(mode));
+    return;
+  }
+  doApplyImport(mode);
+}
+
+el('confirmOkBtn').onclick = async () => {
+  const callback = state.confirmCallback;
+  closeConfirmModal();
+  if (callback) await callback();
+};
+document.querySelectorAll('.editor-cmd').forEach(btn => btn.addEventListener('click', () => applyEditorCommand(btn.dataset.editorTarget, btn.dataset.cmd)));
+document.querySelectorAll('.editor-mode').forEach(btn => btn.addEventListener('click', () => setEditorMode(btn.dataset.editorTarget, btn.dataset.mode)));
+el('pageSizeSelect').value = String(state.pagination.pageSize);
+el('pageSizeSelect').addEventListener('change', (e) => { state.pagination.pageSize = Number(e.target.value || 50); state.pagination.page = 1; localStorage.setItem('viki_page_size', String(state.pagination.pageSize)); loadProducts(); });
+el('paginationPrevBtn').onclick = () => { state.pagination.page = Math.max(1, state.pagination.page - 1); loadProducts(); };
+el('paginationNextBtn').onclick = () => { state.pagination.page = Math.min(state.pagination.pages, state.pagination.page + 1); loadProducts(); };
+el('loginBtn').onclick = login;
+el('togglePasswordBtn').onclick = () => {
+  const input = el('password');
+  const visible = input.type === 'text';
+  input.type = visible ? 'password' : 'text';
+  el('togglePasswordBtn').textContent = visible ? 'Zobrazit' : 'Skrýt';
+};
+[el('email'), el('password')].forEach(input => input.addEventListener('keydown', event => {
+  if (event.key === 'Enter') login();
+}));
+el('logoutBtn').onclick = () => {
+  clearSession();
+  el('appView').classList.add('hidden');
+  el('loginView').classList.remove('hidden');
+};
+el('storeSelect').onchange = switchStore;
+el('refreshBtn').onclick = () => bootstrap();
+el('newRootCategoryBtn').onclick = () => openCategoryModal(null, null);
+el('newProductBtn').onclick = () => openProductModal();
+el('saveCategoryBtn').onclick = saveCategory;
+el('saveProductBtn').onclick = saveProduct;
+el('syncWooBtn').onclick = () => state.editingProductId && syncProductToWoo(state.editingProductId);
+el('deleteCategoryBtn').onclick = () => state.editingCategoryId && confirmDeleteCategory(state.editingCategoryId);
+el('deleteProductBtn').onclick = () => state.editingProductId && confirmDeleteProduct(state.editingProductId);
+el('clearCategoryFilterBtn').onclick = () => { state.selectedCategoryId = null; state.pagination.page = 1; loadProducts(); };
+el('categorySearch').oninput = renderCategoryTree;
+let productSearchTimer = null;
+el('productSearch').oninput = (e) => {
+  state.q = e.target.value;
+  state.pagination.page = 1;
+  clearTimeout(productSearchTimer);
+  productSearchTimer = setTimeout(() => loadProducts(), 250);
+};
+el('bulkMoveBtn').onclick = bulkMoveProducts;
+el('bulkSyncWooBtn').onclick = bulkSyncProductsToWoo;
+el('bulkDeleteBtn').onclick = bulkDeleteProducts;
+el('bulkClearBtn').onclick = () => { state.selectedProductIds = []; renderProducts(); };
+el('selectAllProducts').onchange = (e) => {
+  const visible = getVisibleProducts().map(product => product.id);
+  if (e.target.checked) {
+    state.selectedProductIds = Array.from(new Set([...state.selectedProductIds, ...visible]));
+  } else {
+    state.selectedProductIds = state.selectedProductIds.filter(id => !visible.includes(id));
+  }
+  renderProducts();
+};
+el('p_type').onchange = toggleVariantArea;
+el('generateVariantsBtn').onclick = generateVariants;
+el('addVariantBtn').onclick = addVariantRow;
+el('p_image').oninput = () => renderImageSection();
+el('addGalleryImageBtn').onclick = () => { state.currentGalleryImages.push(''); renderImageSection(); };
+el('backupBtn').onclick = createBackup;
+el('restoreBtn').onclick = restoreBackup;
+el('importBtn').onclick = () => { openImportModal(); el('importFile').click(); };
+el('importFile').addEventListener('change', handleImportFile);
+el('applyImportBtn').onclick = applyPendingImport;
+
+el('navToggleBtn').onclick = () => el('appNavigation').classList.toggle('mobile-open');
+el('categoriesNavBtn').onclick = () => {
+  el('catalogSidebar').classList.toggle('mobile-open');
+  el('appNavigation').classList.remove('mobile-open');
+};
+el('overviewNavBtn').onclick = () => {
+  toast(`Katalog obsahuje ${state.pagination.total || 0} produktů a ${state.categories.length} kategorií.`, 'info');
+  el('appNavigation').classList.remove('mobile-open');
+};
+window.addEventListener('keydown', event => {
+  if (event.key !== 'Escape') return;
+  el('appNavigation').classList.remove('mobile-open');
+  el('catalogSidebar').classList.remove('mobile-open');
+});
+
+resolveApiBase()
+  .then(() => { if (state.token) return bootstrap(true); })
+  .catch(err => {
+    if (!state.token) return;
+    clearSession();
+    el('loginError').textContent = err.message || 'Server Viki není dostupný.';
+    el('loginError').classList.remove('hidden');
+  });
+</script>
+</body>
+</html>

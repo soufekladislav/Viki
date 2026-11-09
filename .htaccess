@@ -1,0 +1,11 @@
+Options -Indexes
+
+<FilesMatch "(^\\.|\\.(?:env|log|sql|zip|bak|json)$)">
+    Require all denied
+</FilesMatch>
+
+RewriteEngine On
+RewriteRule ^(?:bootstrap|config|database|docs|postman|src|storage|tmp)(?:/|$) - [F,L,NC]
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^ public/index.php [QSA,L]

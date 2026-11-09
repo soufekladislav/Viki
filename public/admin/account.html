@@ -1,0 +1,1378 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Viki 0.8.2 · nastavení</title>
+  <link rel="icon" type="image/png" href="https://www.freshcrackers.cz/wp-content/uploads/2023/10/icon-FC.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .tab-btn.active { background:#171717; color:#fff; border-color:#171717; }
+    .modal-backdrop { background:rgba(0,0,0,.45); }
+    body { font-family:Poppins,system-ui,sans-serif; }
+    @media (max-width:900px) {
+      main>.grid { display:block; }
+      main>.grid>aside { position:static; margin-bottom:1rem; }
+      main>.grid>section { width:100%; }
+      header { height:auto !important; min-height:4rem; padding-top:.65rem; padding-bottom:.65rem; flex-wrap:wrap; }
+      .grid-cols-2,.grid-cols-3,.grid-cols-4 { grid-template-columns:minmax(0,1fr) !important; }
+    }
+    @media (max-width:640px) {
+      main { padding:.75rem !important; }
+      header>div:last-child { width:100%; overflow:auto; }
+      .modal-backdrop>div { max-width:none !important; width:100% !important; max-height:100% !important; height:100% !important; border-radius:0 !important; }
+    }
+  </style>
+</head>
+<body class="bg-neutral-100 text-neutral-800 min-h-screen">
+  <div id="loginRequired" class="hidden min-h-screen flex items-center justify-center p-6">
+    <div class="w-full max-w-md bg-white rounded-2xl shadow-sm border border-neutral-200 p-6">
+      <div class="flex items-center gap-3"><img src="https://www.freshcrackers.cz/wp-content/uploads/2026/08/viki.png" alt="Viki" class="w-14 h-14 rounded-2xl object-cover"><div><div class="text-xs uppercase tracking-[0.2em] text-neutral-400">Viki 0.8.2</div><h1 class="text-2xl font-semibold mt-1">Nastavení</h1></div></div>
+      <p class="text-sm text-neutral-500 mt-2">Pro vstup do správy účtu se nejdřív přihlas do administrace katalogu.</p>
+      <div class="mt-5 flex gap-2">
+        <a href="./index.html" class="px-4 py-3 rounded-xl bg-neutral-900 text-white">Přejít na login</a>
+      </div>
+    </div>
+  </div>
+
+  <div id="appView" class="hidden min-h-screen flex flex-col">
+    <header class="h-16 shrink-0 bg-white border-b border-neutral-200 px-5 flex items-center justify-between gap-4">
+      <div class="flex items-center gap-3">
+        <img src="https://www.freshcrackers.cz/wp-content/uploads/2026/08/viki.png" alt="Viki" class="w-10 h-10 rounded-xl object-cover">
+        <div>
+          <div class="text-xs uppercase tracking-[0.2em] text-neutral-400">Viki 0.8.2</div>
+          <h1 class="text-lg font-semibold">Nastavení a konektory</h1>
+        </div>
+      </div>
+      <div class="flex items-center gap-2 text-sm">
+        <span id="userBadge" class="hidden md:inline text-neutral-500 mr-2"></span>
+        <span id="superadminBadge" class="hidden px-2 py-1 rounded-full text-xs border border-amber-300 bg-amber-50 text-amber-700">superadmin</span>
+        <a href="./index.html" class="px-3 py-2 rounded-lg border border-neutral-300 bg-white hover:bg-neutral-50">Katalog</a>
+        <button id="refreshBtn" class="px-3 py-2 rounded-lg border border-neutral-300 bg-white hover:bg-neutral-50">Obnovit</button>
+        <button id="logoutBtn" class="px-3 py-2 rounded-lg bg-neutral-900 text-white hover:bg-black">Odhlásit</button>
+      </div>
+    </header>
+
+    <main class="flex-1 p-5">
+      <div id="toastWrap" class="fixed top-4 right-4 z-[80] space-y-2"></div>
+
+      <div class="grid grid-cols-12 gap-5">
+        <aside class="col-span-3 bg-white rounded-2xl border border-neutral-200 shadow-sm p-4 space-y-4 self-start sticky top-5">
+          <div>
+            <div class="text-xs uppercase tracking-wide text-neutral-400">Účet</div>
+            <div id="sidebarFullName" class="font-semibold text-lg mt-1">—</div>
+            <div id="sidebarEmail" class="text-sm text-neutral-500">—</div>
+          </div>
+
+          <div class="rounded-2xl border border-neutral-200 p-4 bg-neutral-50">
+            <div class="text-xs uppercase tracking-wide text-neutral-400">Aktivní role</div>
+            <div id="roleBadgeList" class="mt-2 flex flex-wrap gap-2"></div>
+          </div>
+
+          <div class="space-y-2">
+            <button class="tab-btn active w-full text-left px-3 py-2 rounded-xl border border-neutral-300" data-tab="profile">Profil účtu</button>
+            <button class="tab-btn w-full text-left px-3 py-2 rounded-xl border border-neutral-300" data-tab="users">Uživatelé</button>
+            <button class="tab-btn w-full text-left px-3 py-2 rounded-xl border border-neutral-300" data-tab="stores">E-shopy</button>
+            <button class="tab-btn w-full text-left px-3 py-2 rounded-xl border border-neutral-300" data-tab="companies">Společnosti</button>
+            <button class="tab-btn w-full text-left px-3 py-2 rounded-xl border border-neutral-300" data-tab="access">Role a oprávnění</button>
+          </div>
+        </aside>
+
+        <section class="col-span-9 space-y-5">
+          <div id="tab-profile" class="tab-panel space-y-5">
+            <div class="bg-white rounded-2xl border border-neutral-200 shadow-sm p-5">
+              <div class="flex items-center justify-between gap-4 mb-4">
+                <div>
+                  <h2 class="text-lg font-semibold">Profil účtu</h2>
+                  <p class="text-sm text-neutral-500">Osobní údaje a základní bezpečnostní nastavení.</p>
+                </div>
+                <button id="saveProfileBtn" class="px-3 py-2 rounded-lg bg-neutral-900 text-white opacity-60 cursor-not-allowed">Uložit profil</button>
+              </div>
+              <div class="grid grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-sm mb-1">Uživatelské jméno</label>
+                  <input id="profile_username" class="w-full rounded-xl border border-neutral-300 px-3 py-2" />
+                </div>
+                <div>
+                  <label class="block text-sm mb-1">E-mail</label>
+                  <input id="profile_email" class="w-full rounded-xl border border-neutral-300 px-3 py-2" />
+                </div>
+                <div>
+                  <label class="block text-sm mb-1">Jméno</label>
+                  <input id="profile_first_name" class="w-full rounded-xl border border-neutral-300 px-3 py-2" />
+                </div>
+                <div>
+                  <label class="block text-sm mb-1">Příjmení</label>
+                  <input id="profile_last_name" class="w-full rounded-xl border border-neutral-300 px-3 py-2" />
+                </div>
+                <div>
+                  <label class="block text-sm mb-1">Role</label>
+                  <input id="profile_role" class="w-full rounded-xl border border-neutral-300 px-3 py-2 bg-neutral-50" disabled />
+                </div>
+                <div>
+                  <label class="block text-sm mb-1">Nové heslo</label>
+                  <input id="profile_password" type="password" class="w-full rounded-xl border border-neutral-300 px-3 py-2" placeholder="Zatím bez backendu pro změnu profilu" />
+                </div>
+              </div>
+              <div class="mt-3 text-xs text-neutral-400">Pozn.: editace vlastního profilu zatím nemá backend endpoint, proto je tato sekce pouze informativní.</div>
+            </div>
+
+            <div class="bg-white rounded-2xl border border-neutral-200 shadow-sm p-5">
+              <h3 class="text-lg font-semibold mb-2">Přístupné e-shopy</h3>
+              <p class="text-sm text-neutral-500 mb-4">Uživatel může pracovat napříč více e-shopy a společnostmi.</p>
+              <div id="profileStoreList" class="grid grid-cols-2 gap-3"></div>
+            </div>
+          </div>
+
+          <div id="tab-users" class="tab-panel hidden space-y-5">
+            <div class="bg-white rounded-2xl border border-neutral-200 shadow-sm p-5">
+              <div class="flex items-center justify-between gap-4 mb-4">
+                <div>
+                  <h2 class="text-lg font-semibold">Uživatelé</h2>
+                  <p class="text-sm text-neutral-500">Seznam uživatelů a vytvoření nového uživatele s rolemi po e-shopech.</p>
+                </div>
+                <div class="flex gap-2">
+                  <button id="reloadUsersBtn" class="px-3 py-2 rounded-lg border border-neutral-300 bg-white hover:bg-neutral-50">Obnovit seznam</button>
+                  <button id="newUserBtn" class="px-3 py-2 rounded-lg bg-neutral-900 text-white hover:bg-black">Nový uživatel</button>
+                </div>
+              </div>
+
+              <div id="usersForbidden" class="hidden rounded-xl border border-amber-200 bg-amber-50 text-amber-800 px-4 py-3 text-sm">
+                Seznam uživatelů je dostupný pouze pro superadmina.
+              </div>
+
+              <div id="usersTableWrap" class="rounded-2xl border border-neutral-200 overflow-hidden">
+                <div class="grid grid-cols-12 gap-3 px-4 py-3 bg-neutral-50 text-xs font-semibold uppercase tracking-wide text-neutral-500">
+                  <div class="col-span-3">Uživatel</div>
+                  <div class="col-span-2">Role</div>
+                  <div class="col-span-4">E-shopy</div>
+                  <div class="col-span-1">Stav</div>
+                  <div class="col-span-2 text-right">Akce</div>
+                </div>
+                <div id="usersList" class="divide-y divide-neutral-200"></div>
+              </div>
+            </div>
+          </div>
+
+          <div id="tab-stores" class="tab-panel hidden space-y-5">
+            <div class="bg-white rounded-2xl border border-neutral-200 shadow-sm p-5">
+              <div class="flex items-center justify-between gap-4 mb-4">
+                <div>
+                  <h2 class="text-lg font-semibold">E-shopy</h2>
+                  <p class="text-sm text-neutral-500">Založení a úprava e-shopu včetně názvu, kódu, loga a stavu aktivace. Připojení WooCommerce a první import jsou nově přímo zde.</p>
+                </div>
+                <div class="flex gap-2">
+                  <button id="reloadStoresBtn" class="px-3 py-2 rounded-lg border border-neutral-300 bg-white hover:bg-neutral-50">Obnovit seznam</button>
+                  <button id="newStoreBtn" class="px-3 py-2 rounded-lg bg-neutral-900 text-white hover:bg-black">Nový e-shop</button>
+                </div>
+              </div>
+              <div id="storesGrid" class="grid grid-cols-2 gap-4"></div>
+            </div>
+          </div>
+
+          <div id="tab-companies" class="tab-panel hidden space-y-5">
+            <div class="bg-white rounded-2xl border border-neutral-200 shadow-sm p-5">
+              <div class="flex items-center justify-between gap-4 mb-4">
+                <div>
+                  <h2 class="text-lg font-semibold">Společnosti</h2>
+                  <p class="text-sm text-neutral-500">Tato sekce zůstává připravená na další fázi.</p>
+                </div>
+                <button class="px-3 py-2 rounded-lg bg-neutral-900 text-white opacity-60 cursor-not-allowed">Nová společnost</button>
+              </div>
+              <div class="grid grid-cols-2 gap-5">
+                <div class="rounded-2xl border border-neutral-200 p-4">
+                  <div class="font-medium mb-3">Formulář společnosti</div>
+                  <div class="space-y-3">
+                    <input class="w-full rounded-xl border border-neutral-300 px-3 py-2" placeholder="Název společnosti" disabled />
+                    <div class="grid grid-cols-2 gap-3">
+                      <input class="w-full rounded-xl border border-neutral-300 px-3 py-2" placeholder="IČ" disabled />
+                      <input class="w-full rounded-xl border border-neutral-300 px-3 py-2" placeholder="DIČ" disabled />
+                    </div>
+                    <input class="w-full rounded-xl border border-neutral-300 px-3 py-2" placeholder="Fakturační e-mail" disabled />
+                    <textarea class="w-full rounded-xl border border-neutral-300 px-3 py-2" rows="4" placeholder="Fakturační adresa" disabled></textarea>
+                    <div>
+                      <div class="text-sm mb-2">Přiřazené e-shopy</div>
+                      <div id="companyStoreChecklist" class="space-y-2 text-sm"></div>
+                    </div>
+                    <button class="px-3 py-2 rounded-lg bg-neutral-900 text-white opacity-60 cursor-not-allowed">Uložit společnost</button>
+                  </div>
+                </div>
+                <div class="rounded-2xl border border-neutral-200 overflow-hidden">
+                  <div class="px-4 py-3 bg-neutral-50 text-xs font-semibold uppercase tracking-wide text-neutral-500">Seznam společností</div>
+                  <div class="px-4 py-10 text-sm text-neutral-500">Companies napojíme v další backend fázi.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div id="tab-access" class="tab-panel hidden space-y-5">
+            <div class="bg-white rounded-2xl border border-neutral-200 shadow-sm p-5">
+              <h2 class="text-lg font-semibold mb-4">Role a oprávnění</h2>
+              <div class="grid grid-cols-2 gap-4">
+                <div class="rounded-2xl border border-neutral-200 p-4">
+                  <div class="font-medium">superadmin</div>
+                  <div class="text-sm text-neutral-500 mt-1">Celá aplikace a všechny e-shopy.</div>
+                </div>
+                <div class="rounded-2xl border border-neutral-200 p-4">
+                  <div class="font-medium">admin</div>
+                  <div class="text-sm text-neutral-500 mt-1">Plná správa přiděleného e-shopu včetně oprávnění.</div>
+                </div>
+                <div class="rounded-2xl border border-neutral-200 p-4">
+                  <div class="font-medium">manager</div>
+                  <div class="text-sm text-neutral-500 mt-1">Správa katalogu a provozu přiděleného e-shopu.</div>
+                </div>
+                <div class="rounded-2xl border border-neutral-200 p-4">
+                  <div class="font-medium">editor</div>
+                  <div class="text-sm text-neutral-500 mt-1">Úpravy katalogu, produktů a kategorií.</div>
+                </div>
+                <div class="rounded-2xl border border-neutral-200 p-4 col-span-2">
+                  <div class="font-medium">viewer</div>
+                  <div class="text-sm text-neutral-500 mt-1">Pouze čtení.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <div id="storeModal" class="hidden fixed inset-0 z-[90]">
+    <div class="absolute inset-0 modal-backdrop"></div>
+    <div class="absolute inset-0 flex items-center justify-center p-6">
+      <div class="w-full max-w-2xl bg-white rounded-2xl border border-neutral-200 shadow-xl">
+        <div class="px-5 py-4 border-b border-neutral-200 flex items-center justify-between">
+          <div>
+            <h3 id="storeModalTitle" class="text-lg font-semibold">Nový e-shop</h3>
+            <p class="text-sm text-neutral-500">Základní údaje e-shopu, provozní nastavení a obnova ze záloh.</p>
+          </div>
+          <button data-close-modal="storeModal" class="px-3 py-2 rounded-lg border border-neutral-300 bg-white">Zavřít</button>
+        </div>
+        <form id="storeForm" class="p-5 space-y-4">
+          <input type="hidden" id="store_id" />
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm mb-1">Název e-shopu</label>
+              <input id="store_name" class="w-full rounded-xl border border-neutral-300 px-3 py-2" required />
+            </div>
+            <div>
+              <label class="block text-sm mb-1">Kód e-shopu</label>
+              <input id="store_code" class="w-full rounded-xl border border-neutral-300 px-3 py-2" required />
+            </div>
+            <div class="col-span-2">
+              <label class="block text-sm mb-1">Logo URL</label>
+              <input id="store_logo_url" class="w-full rounded-xl border border-neutral-300 px-3 py-2" placeholder="https://..." />
+            </div>
+            <div class="col-span-2">
+              <label class="inline-flex items-center gap-2 text-sm">
+                <input id="store_is_active" type="checkbox" class="rounded border-neutral-300" checked />
+                <span>Aktivní e-shop</span>
+              </label>
+            </div>
+          </div>
+
+          <div id="storeAdvancedWrap" class="hidden space-y-4">
+            <div class="rounded-2xl border border-neutral-200 p-4 bg-neutral-50">
+              <div class="font-medium">Základní nastavení e-shopu</div>
+              <div class="text-sm text-neutral-500 mt-1">Ruční nastavení pro pricing, DPH a periodu synchronizace. Zdroj importu je připravený i pro budoucí rozšíření mimo WooCommerce.</div>
+              <div class="grid grid-cols-2 gap-4 mt-4">
+                <div>
+                  <label class="block text-sm mb-1">Zdroj dat</label>
+                  <select id="settings_source_type" class="w-full rounded-xl border border-neutral-300 px-3 py-2">
+                    <option value="woocommerce">WooCommerce</option>
+                    <option value="shoptet">Shoptet</option>
+                    <option value="shopify">Shopify</option>
+                    <option value="manual">Ruční</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-sm mb-1">Perioda odesílání do WooCommerce (min)</label>
+                  <input id="settings_sync_interval_minutes" type="number" min="5" step="5" class="w-full rounded-xl border border-neutral-300 px-3 py-2" />
+                </div>
+                <div>
+                  <label class="block text-sm mb-1">Ceny v katalogu</label>
+                  <select id="settings_prices_include_tax" class="w-full rounded-xl border border-neutral-300 px-3 py-2">
+                    <option value="yes">S DPH</option>
+                    <option value="no">Bez DPH</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-sm mb-1">Aktualizováno</label>
+                  <div id="settingsUpdatedAt" class="w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-500">—</div>
+                </div>
+                <div class="col-span-2">
+                  <label class="block text-sm mb-1">Sazby DPH</label>
+                  <textarea id="settings_tax_rates" rows="3" class="w-full rounded-xl border border-neutral-300 px-3 py-2" placeholder="Např. 21&#10;12&#10;0"></textarea>
+                </div>
+                <div class="col-span-2">
+                  <label class="block text-sm mb-1">Poznámka</label>
+                  <textarea id="settings_notes" rows="3" class="w-full rounded-xl border border-neutral-300 px-3 py-2" placeholder="Doplňující informace k e-shopu"></textarea>
+                </div>
+              </div>
+            </div>
+
+            <div class="rounded-2xl border border-neutral-200 p-4">
+              <div class="flex items-center justify-between gap-3">
+                <div>
+                  <div class="font-medium">Zálohy katalogu</div>
+                  <div class="text-sm text-neutral-500 mt-1">Před prvním importem se automaticky vytvoří záloha. Zde můžeš vytvořit i ruční snapshot a obnovit jej.</div>
+                </div>
+                <button type="button" id="createManualBackupBtn" class="px-3 py-2 rounded-lg border border-neutral-300 bg-white">Vytvořit zálohu</button>
+              </div>
+              <div id="backupList" class="mt-4 space-y-2 text-sm"></div>
+            </div>
+          </div>
+          <div class="flex items-center justify-between gap-3 pt-2">
+            <div id="storeFormError" class="text-sm text-red-600"></div>
+            <div class="flex gap-2">
+              <button type="button" data-close-modal="storeModal" class="px-3 py-2 rounded-lg border border-neutral-300 bg-white">Zrušit</button>
+              <button id="storeSubmitBtn" type="submit" class="px-3 py-2 rounded-lg bg-neutral-900 text-white">Uložit e-shop</button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div id="userModal" class="hidden fixed inset-0 z-[90]">
+    <div class="absolute inset-0 modal-backdrop"></div>
+    <div class="absolute inset-0 flex items-center justify-center p-6">
+      <div class="w-full max-w-3xl bg-white rounded-2xl border border-neutral-200 shadow-xl">
+        <div class="px-5 py-4 border-b border-neutral-200 flex items-center justify-between">
+          <div>
+            <h3 class="text-lg font-semibold">Nový uživatel</h3>
+            <p class="text-sm text-neutral-500">Zadej základní údaje a přiřaď role po e-shopech.</p>
+          </div>
+          <button data-close-modal="userModal" class="px-3 py-2 rounded-lg border border-neutral-300 bg-white">Zavřít</button>
+        </div>
+        <form id="userForm" class="p-5 space-y-5">
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm mb-1">Celé jméno</label>
+              <input id="user_full_name" class="w-full rounded-xl border border-neutral-300 px-3 py-2" placeholder="Např. Jan Novák" />
+            </div>
+            <div>
+              <label class="block text-sm mb-1">E-mail</label>
+              <input id="user_email" type="email" class="w-full rounded-xl border border-neutral-300 px-3 py-2" required />
+            </div>
+            <div>
+              <label class="block text-sm mb-1">Heslo</label>
+              <input id="user_password" type="password" class="w-full rounded-xl border border-neutral-300 px-3 py-2" minlength="8" required />
+            </div>
+            <div class="flex items-end">
+              <label class="inline-flex items-center gap-2 text-sm">
+                <input id="user_is_active" type="checkbox" class="rounded border-neutral-300" checked />
+                <span>Aktivní uživatel</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="rounded-2xl border border-neutral-200">
+            <div class="px-4 py-3 border-b border-neutral-200 bg-neutral-50 flex items-center justify-between">
+              <div>
+                <div class="font-medium">Přiřazení k e-shopům</div>
+                <div class="text-sm text-neutral-500">Vyber e-shop a roli, backend z ní vytvoří permission keys.</div>
+              </div>
+              <button id="addAssignmentBtn" type="button" class="px-3 py-2 rounded-lg border border-neutral-300 bg-white">Přidat přiřazení</button>
+            </div>
+            <div id="assignmentRows" class="p-4 space-y-3"></div>
+          </div>
+
+          <div class="flex items-center justify-between gap-3 pt-1">
+            <div id="userFormError" class="text-sm text-red-600"></div>
+            <div class="flex gap-2">
+              <button type="button" data-close-modal="userModal" class="px-3 py-2 rounded-lg border border-neutral-300 bg-white">Zrušit</button>
+              <button id="userSubmitBtn" type="submit" class="px-3 py-2 rounded-lg bg-neutral-900 text-white">Vytvořit uživatele</button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div id="wooModal" class="hidden fixed inset-0 z-[90]">
+    <div class="absolute inset-0 modal-backdrop"></div>
+    <div class="absolute inset-0 flex items-center justify-center p-6">
+      <div class="w-full max-w-3xl bg-white rounded-2xl border border-neutral-200 shadow-xl">
+        <div class="px-5 py-4 border-b border-neutral-200 flex items-center justify-between">
+          <div>
+            <h3 id="wooModalTitle" class="text-lg font-semibold">Připojení WooCommerce</h3>
+            <p class="text-sm text-neutral-500">Primární cesta pro první import: plugin + API. Ruční import zůstává jako nouzová varianta mimo tento dialog.</p>
+          </div>
+          <button data-close-modal="wooModal" class="px-3 py-2 rounded-lg border border-neutral-300 bg-white">Zavřít</button>
+        </div>
+        <form id="wooForm" class="p-5 space-y-5">
+          <input type="hidden" id="woo_store_id" />
+          <div class="grid grid-cols-2 gap-4">
+            <div class="col-span-2">
+              <label class="block text-sm mb-1">WordPress / WooCommerce URL</label>
+              <input id="woo_wp_base_url" class="w-full rounded-xl border border-neutral-300 px-3 py-2" placeholder="https://example.com" />
+            </div>
+            <div class="col-span-2">
+              <label class="block text-sm mb-1">Plugin token</label>
+              <input id="woo_plugin_token" class="w-full rounded-xl border border-neutral-300 px-3 py-2" placeholder="Vlož token z pluginu Viki Connector" />
+            </div>
+          </div>
+
+          <div class="rounded-2xl border border-neutral-200 bg-neutral-50 p-4">
+            <div class="font-medium">Postup</div>
+            <ol class="mt-2 text-sm text-neutral-600 space-y-1 list-decimal list-inside">
+              <li>Nainstaluj plugin <strong>Viki Connector 0.8</strong> do WordPressu.</li>
+              <li>V pluginu zkopíruj token a vlož jej sem spolu s URL webu.</li>
+              <li>Klikni na <strong>Uložit připojení</strong> a potom <strong>Ověřit připojení</strong>.</li>
+              <li>Po úspěšném ověření spusť <strong>První import</strong>.</li>
+            </ol>
+          </div>
+
+          <div class="rounded-2xl border border-neutral-200 p-4">
+            <div class="flex items-center justify-between gap-3">
+              <div>
+                <div class="font-medium">Stav připojení</div>
+                <div id="wooConnectionState" class="text-sm text-neutral-500 mt-1">Zatím nenakonfigurováno.</div>
+              </div>
+              <div class="flex gap-2">
+                <button type="button" id="wooSaveBtn" class="px-3 py-2 rounded-lg border border-neutral-300 bg-white">Uložit připojení</button>
+                <button type="button" id="wooDiscoverBtn" class="px-3 py-2 rounded-lg border border-neutral-300 bg-white">Ověřit připojení</button>
+                
+              </div>
+            </div>
+            <div id="wooRemoteSummary" class="mt-3 text-sm text-neutral-600"></div>
+          </div>
+
+          <div class="flex items-center justify-between gap-3 pt-1">
+            <div id="wooFormError" class="text-sm text-red-600"></div>
+            <div class="flex gap-2">
+              <button type="button" data-close-modal="wooModal" class="px-3 py-2 rounded-lg border border-neutral-300 bg-white">Zrušit</button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+
+  <div id="importProgressModal" class="hidden fixed inset-0 z-[95]">
+    <div class="absolute inset-0 modal-backdrop"></div>
+    <div class="absolute inset-0 flex items-center justify-center p-6">
+      <div class="w-full max-w-xl bg-white rounded-2xl border border-neutral-200 shadow-xl p-6">
+        <div class="flex items-start justify-between gap-4">
+          <div>
+            <h3 class="text-lg font-semibold">První import e-shopu</h3>
+            <p id="importProgressSource" class="text-sm text-neutral-500 mt-1">Zdroj: WooCommerce</p>
+          </div>
+          <button type="button" id="closeImportProgressBtn" class="px-3 py-2 rounded-lg border border-neutral-300 bg-white">Zavřít</button>
+        </div>
+        <div class="mt-5 rounded-xl border border-neutral-200 bg-neutral-50 p-4">
+          <div class="w-full h-3 rounded-full bg-neutral-200 overflow-hidden">
+            <div id="importProgressBar" class="h-full bg-neutral-900" style="width: 8%"></div>
+          </div>
+          <div id="importProgressStatus" class="mt-3 text-sm text-neutral-700">Připravuji import…</div>
+          <div id="importProgressMeta" class="mt-2 text-xs text-neutral-500"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+const storageKeys = { apiBase:'feedhub_api_base', apiController:'viki_api_controller', token:'feedhub_token' };
+
+function inferredApiBase() {
+  const path = decodeURI(location.pathname || '/');
+  const marker = path.lastIndexOf('/admin/');
+  const prefix = marker >= 0 ? path.slice(0, marker) : '';
+  return `${location.origin}${prefix}`.replace(/\/$/, '');
+}
+
+const state = {
+  apiBase: sessionStorage.getItem('viki_api_base') || inferredApiBase(),
+  apiController: sessionStorage.getItem('viki_api_controller') || '',
+  token: sessionStorage.getItem(storageKeys.token) || '',
+  me: null,
+  stores: [],
+  users: [],
+  loadingUsers: false,
+  connections: {},
+  backups: {},
+  storeSettings: {},
+  importRunning: false,
+};
+
+const el = (id) => document.getElementById(id);
+
+function apiUrl(path) {
+  if (!state.apiController) return `${state.apiBase}${path}`;
+  const [route, query = ''] = String(path).split('?');
+  const url = new URL(state.apiController, location.href);
+  url.searchParams.set('route', route);
+  new URLSearchParams(query).forEach((value, key) => url.searchParams.append(key, value));
+  return url.toString();
+}
+
+function toast(message, type='info') {
+  const colors = {
+    success:'border-green-200 bg-green-50 text-green-800',
+    error:'border-red-200 bg-red-50 text-red-800',
+    info:'border-neutral-200 bg-white text-neutral-800'
+  };
+  const node = document.createElement('div');
+  node.className = `min-w-[280px] max-w-[420px] rounded-xl border px-4 py-3 shadow-sm ${colors[type] || colors.info}`;
+  node.textContent = message;
+  el('toastWrap').appendChild(node);
+  setTimeout(() => node.remove(), 3500);
+}
+
+function escapeHtml(str='') {
+  return String(str)
+    .replaceAll('&','&amp;')
+    .replaceAll('<','&lt;')
+    .replaceAll('>','&gt;')
+    .replaceAll('"','&quot;')
+    .replaceAll("'", '&#039;');
+}
+
+function isSuperadmin() {
+  return Boolean(state.me?.user?.is_superadmin);
+}
+
+function splitFullName(fullName='') {
+  const parts = String(fullName || '').trim().split(/\s+/).filter(Boolean);
+  return {
+    firstName: parts.slice(0, 1).join(' '),
+    lastName: parts.slice(1).join(' ')
+  };
+}
+
+function normalizeStoreCode(value) {
+  return String(value || '')
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9-]+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '');
+}
+
+function connectionBadge(connection) {
+  if (!connection) return '<span class="px-2 py-1 rounded-full text-xs border border-neutral-200 bg-neutral-100 text-neutral-500">nepřipojeno</span>';
+  const status = String(connection.status || 'draft');
+  const map = {
+    draft: 'border-neutral-200 bg-neutral-100 text-neutral-600',
+    connected: 'border-blue-200 bg-blue-50 text-blue-700',
+    imported: 'border-green-200 bg-green-50 text-green-700'
+  };
+  const label = {
+    draft: 'konfigurace',
+    connected: 'připojeno',
+    imported: 'importováno'
+  };
+  return `<span class="px-2 py-1 rounded-full text-xs border ${map[status] || map.draft}">${label[status] || status}</span>`;
+}
+
+function renderWooConnectionState(connection, remote = null) {
+  if (!connection) {
+    el('wooConnectionState').textContent = 'Zatím nenakonfigurováno.';
+    el('wooRemoteSummary').innerHTML = '';
+    return;
+  }
+
+  const status = connection.status || 'draft';
+  const stateLabel = {
+    draft: 'Konfigurace uložena, ještě neproběhlo ověření.',
+    connected: 'Připojení je uložené a připravené k ověření/importu.',
+    imported: 'První import již proběhl.'
+  };
+  el('wooConnectionState').textContent = stateLabel[status] || status;
+
+  const summary = remote || connection;
+  const rows = [];
+  if (summary.remote_site_name) rows.push(`<div><strong>Web:</strong> ${escapeHtml(summary.remote_site_name)}</div>`);
+  if (summary.remote_home_url) rows.push(`<div><strong>URL:</strong> ${escapeHtml(summary.remote_home_url)}</div>`);
+  if (summary.remote_wc_version || summary.remote_wp_version) rows.push(`<div><strong>Verze:</strong> WP ${escapeHtml(summary.remote_wp_version || '—')} · Woo ${escapeHtml(summary.remote_wc_version || '—')}</div>`);
+  rows.push(`<div><strong>Kategorie:</strong> ${Number(summary.remote_category_count || 0)}</div>`);
+  rows.push(`<div><strong>Produkty:</strong> ${Number(summary.remote_product_count || 0)}</div>`);
+  if (connection.last_discovery_at) rows.push(`<div><strong>Poslední ověření:</strong> ${escapeHtml(connection.last_discovery_at)}</div>`);
+  if (connection.last_import_at) rows.push(`<div><strong>Poslední import:</strong> ${escapeHtml(connection.last_import_at)}</div>`);
+  el('wooRemoteSummary').innerHTML = rows.join('');
+}
+
+function roleLabel(role) {
+  const map = {
+    superadmin: 'superadmin',
+    admin: 'admin',
+    manager: 'manager',
+    editor: 'editor',
+    viewer: 'viewer',
+    custom: 'custom'
+  };
+  return map[role] || role || 'viewer';
+}
+
+async function api(path, options = {}) {
+  const headers = { ...(options.headers || {}) };
+  const isFormData = options.body instanceof FormData;
+
+  if (!isFormData) {
+    headers['Content-Type'] = headers['Content-Type'] || 'application/json';
+  }
+
+  if (state.token) {
+    headers['Authorization'] = `Bearer ${state.token}`;
+  }
+
+  const res = await fetch(apiUrl(path), {
+    ...options,
+    headers
+  });
+
+  const data = await res.json().catch(() => ({}));
+
+  if (!res.ok || data.success === false) {
+    throw new Error(data.message || data.error || `API error ${res.status}`);
+  }
+
+  return data;
+}
+
+function setTab(name) {
+  document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.tab === name));
+  document.querySelectorAll('.tab-panel').forEach(panel => panel.classList.add('hidden'));
+  el(`tab-${name}`).classList.remove('hidden');
+
+  if (name === 'users' && isSuperadmin() && state.users.length === 0 && !state.loadingUsers) {
+    loadUsers();
+  }
+}
+
+function openModal(id) {
+  el(id).classList.remove('hidden');
+}
+
+function closeModal(id) {
+  el(id).classList.add('hidden');
+}
+
+function renderRoles() {
+  const roleWrap = el('roleBadgeList');
+  roleWrap.innerHTML = '';
+
+  const currentStorePermissions = Array.isArray(state.me?.permissions) ? state.me.permissions : [];
+  const inferredRoles = [];
+
+  if (isSuperadmin()) inferredRoles.push('superadmin');
+  if (currentStorePermissions.includes('permissions.read')) inferredRoles.push('admin');
+  else if (currentStorePermissions.includes('catalog.write')) inferredRoles.push('editor');
+  else if (currentStorePermissions.includes('catalog.read')) inferredRoles.push('viewer');
+  if (!inferredRoles.length) inferredRoles.push('viewer');
+
+  inferredRoles.forEach(role => {
+    const badge = document.createElement('span');
+    badge.className = 'px-2 py-1 rounded-full text-xs border border-neutral-300 bg-white';
+    badge.textContent = role;
+    roleWrap.appendChild(badge);
+  });
+
+  el('profile_role').value = inferredRoles.join(', ');
+  el('superadminBadge').classList.toggle('hidden', !isSuperadmin());
+}
+
+function renderProfileStores() {
+  const storeList = el('profileStoreList');
+  storeList.innerHTML = '';
+
+  (state.stores || []).forEach(store => {
+    const logo = store.logo_url
+      ? `<img src="${escapeHtml(store.logo_url)}" alt="" class="w-10 h-10 rounded-lg object-cover border border-neutral-200 bg-white">`
+      : `<div class="w-10 h-10 rounded-lg border border-neutral-200 bg-white flex items-center justify-center text-xs text-neutral-400">logo</div>`;
+
+    const card = document.createElement('div');
+    card.className = 'rounded-2xl border border-neutral-200 p-4 bg-neutral-50';
+    card.innerHTML = `
+      <div class="flex items-start gap-3">
+        ${logo}
+        <div class="min-w-0">
+          <div class="font-medium">${escapeHtml(store.name || '')}</div>
+          <div class="text-sm text-neutral-500 mt-1">${escapeHtml(store.code || '')}</div>
+          <div class="text-xs text-neutral-400 mt-2">${store.is_active ? 'Aktivní e-shop' : 'Neaktivní e-shop'}</div>
+        </div>
+      </div>
+    `;
+    storeList.appendChild(card);
+  });
+}
+
+function renderCompanyChecklist() {
+  const companyChecklist = el('companyStoreChecklist');
+  companyChecklist.innerHTML = '';
+
+  (state.stores || []).forEach(store => {
+    const label = document.createElement('label');
+    label.className = 'flex items-center gap-2';
+    label.innerHTML = `
+      <input type="checkbox" class="rounded border-neutral-300" value="${store.id}" disabled>
+      <span>${escapeHtml(store.name || '')}</span>
+    `;
+    companyChecklist.appendChild(label);
+  });
+}
+
+function renderProfile() {
+  const user = state.me?.user || {};
+  const fullName = String(user.full_name || '').trim();
+  const names = splitFullName(fullName);
+
+  el('sidebarFullName').textContent = fullName || user.email || 'Uživatel';
+  el('sidebarEmail').textContent = user.email || '—';
+  el('userBadge').textContent = `${user.full_name || user.email || ''} · ${state.me?.current_store?.name || ''}`;
+  el('userBadge').classList.remove('hidden');
+
+  el('profile_username').value = user.email || '';
+  el('profile_email').value = user.email || '';
+  el('profile_first_name').value = names.firstName;
+  el('profile_last_name').value = names.lastName;
+
+  renderRoles();
+  renderProfileStores();
+  renderCompanyChecklist();
+  renderStores();
+}
+
+function renderStores() {
+  const storesGrid = el('storesGrid');
+  storesGrid.innerHTML = '';
+
+  if (!state.stores.length) {
+    storesGrid.innerHTML = `<div class="col-span-2 rounded-2xl border border-neutral-200 p-6 text-sm text-neutral-500 bg-white">Žádné e-shopy nebyly nalezeny.</div>`;
+    return;
+  }
+
+  (state.stores || []).forEach(store => {
+    const logo = store.logo_url
+      ? `<img src="${escapeHtml(store.logo_url)}" alt="" class="w-12 h-12 rounded-xl object-cover border border-neutral-200 bg-white">`
+      : `<div class="w-12 h-12 rounded-xl border border-neutral-200 bg-white flex items-center justify-center text-xs text-neutral-400">logo</div>`;
+
+    const connection = state.connections[String(store.id)] || state.connections[store.id] || null;
+    const isConnected = Boolean(connection?.wp_base_url && connection?.token_configured && ['connected','imported'].includes(String(connection?.status || '')));
+    const importDisabled = isConnected ? '' : 'opacity-50 cursor-not-allowed';
+    const actions = isSuperadmin()
+      ? `
+        <div class="flex flex-col gap-2 items-stretch min-w-[150px]">
+          <div class="flex gap-2 justify-end">
+            <button class="edit-store-btn px-3 py-2 rounded-lg border border-neutral-300 bg-white hover:bg-neutral-50" data-id="${store.id}">Nastavení</button>
+            <button class="woo-store-btn px-3 py-2 rounded-lg bg-neutral-900 text-white hover:bg-black" data-id="${store.id}">WooCommerce</button>
+          </div>
+          <div class="flex justify-end">
+            <button class="store-import-btn px-3 py-2 rounded-lg bg-neutral-900 text-white ${importDisabled}" ${isConnected ? '' : 'disabled'} data-id="${store.id}">První import</button>
+          </div>
+        </div>`
+      : '';
+
+    const card = document.createElement('div');
+    card.className = 'rounded-2xl border border-neutral-200 p-4 bg-white';
+    card.innerHTML = `
+      <div class="flex items-start justify-between gap-4">
+        <div class="flex items-start gap-3 min-w-0">
+          ${logo}
+          <div class="min-w-0">
+            <div class="font-medium text-base">${escapeHtml(store.name || '')}</div>
+            <div class="text-sm text-neutral-500 mt-1">Kód: ${escapeHtml(store.code || '')}</div>
+            <div class="text-sm text-neutral-500 mt-1 break-all">${store.logo_url ? escapeHtml(store.logo_url) : 'Bez loga'}</div>
+            <div class="mt-2 flex flex-wrap gap-2">
+              <span class="px-2 py-1 rounded-full text-xs border ${store.is_active ? 'border-green-200 bg-green-50 text-green-700' : 'border-neutral-200 bg-neutral-100 text-neutral-500'}">
+                ${store.is_active ? 'aktivní' : 'neaktivní'}
+              </span>
+              ${connectionBadge(connection)}
+            </div>
+            <div class="mt-3 rounded-xl border border-neutral-200 bg-neutral-50 p-3 text-sm text-neutral-600">
+              <div><strong>Woo URL:</strong> ${connection?.wp_base_url ? escapeHtml(connection.wp_base_url) : 'nevyplněno'}</div>
+              <div><strong>Produkty:</strong> ${Number(connection?.remote_product_count || 0)} · <strong>Kategorie:</strong> ${Number(connection?.remote_category_count || 0)}</div>
+              <div><strong>Plugin stav:</strong> ${escapeHtml(connection?.plugin_status || 'not_tested')}</div>
+              <div><strong>Poslední záloha:</strong> ${connection?.last_backup_at ? escapeHtml(connection.last_backup_at) : 'zatím neexistuje'}</div>
+            </div>
+            ${isConnected ? `<div class="mt-3 text-xs text-neutral-500">Provede kompletní přepis katalogu tohoto e-shopu.</div>` : `<div class="mt-3 text-xs text-neutral-400">První import se zpřístupní po úspěšném připojení WooCommerce.</div>`}
+          </div>
+        </div>
+        <div class="shrink-0">${actions}</div>
+      </div>
+    `;
+    storesGrid.appendChild(card);
+  });
+
+  document.querySelectorAll('.edit-store-btn').forEach(btn => {
+    btn.addEventListener('click', () => openEditStoreModal(Number(btn.dataset.id)));
+  });
+
+  document.querySelectorAll('.woo-store-btn').forEach(btn => {
+    btn.addEventListener('click', () => openWooModal(Number(btn.dataset.id)));
+  });
+
+  document.querySelectorAll('.store-import-btn').forEach(btn => {
+    btn.addEventListener('click', () => startStoreImport(Number(btn.dataset.id)));
+  });
+}
+
+function renderUsers() {
+  const list = el('usersList');
+  list.innerHTML = '';
+
+  if (!isSuperadmin()) {
+    el('usersForbidden').classList.remove('hidden');
+    el('usersTableWrap').classList.add('hidden');
+    return;
+  }
+
+  el('usersForbidden').classList.add('hidden');
+  el('usersTableWrap').classList.remove('hidden');
+
+  if (state.loadingUsers) {
+    list.innerHTML = `<div class="px-4 py-8 text-sm text-neutral-500">Načítám uživatele...</div>`;
+    return;
+  }
+
+  if (!state.users.length) {
+    list.innerHTML = `<div class="px-4 py-8 text-sm text-neutral-500">Zatím tu nejsou žádní další uživatelé.</div>`;
+    return;
+  }
+
+  state.users.forEach(user => {
+    const roles = Array.isArray(user.roles) ? user.roles : [];
+    const firstRole = roles[0]?.role || 'viewer';
+    const shopNames = roles.length
+      ? roles.map(r => `${r.store_name} (${roleLabel(r.role)})`).join(', ')
+      : 'Bez přiřazení';
+
+    const row = document.createElement('div');
+    row.className = 'grid grid-cols-12 gap-3 px-4 py-4 text-sm items-start';
+    row.innerHTML = `
+      <div class="col-span-3">
+        <div class="font-medium">${escapeHtml(user.full_name || user.email || '')}</div>
+        <div class="text-neutral-500 mt-1">${escapeHtml(user.email || '')}</div>
+      </div>
+      <div class="col-span-2">
+        <span class="px-2 py-1 rounded-full text-xs border border-neutral-300 bg-white">${escapeHtml(roleLabel(firstRole))}</span>
+      </div>
+      <div class="col-span-4 text-neutral-600">${escapeHtml(shopNames)}</div>
+      <div class="col-span-1">
+        <span class="px-2 py-1 rounded-full text-xs border ${user.is_active ? 'border-green-200 bg-green-50 text-green-700' : 'border-neutral-200 bg-neutral-100 text-neutral-500'}">
+          ${user.is_active ? 'aktivní' : 'vypnutý'}
+        </span>
+      </div>
+      <div class="col-span-2 text-right text-neutral-400">—</div>
+    `;
+    list.appendChild(row);
+  });
+}
+
+function createAssignmentRow(values = {}) {
+  const row = document.createElement('div');
+  row.className = 'assignment-row grid grid-cols-12 gap-3 items-end';
+
+  const storeOptions = (state.stores || []).map(store => {
+    const selected = Number(values.store_id) === Number(store.id) ? 'selected' : '';
+    return `<option value="${store.id}" ${selected}>${escapeHtml(store.name)}</option>`;
+  }).join('');
+
+  row.innerHTML = `
+    <div class="col-span-6">
+      <label class="block text-sm mb-1">E-shop</label>
+      <select class="assignment-store w-full rounded-xl border border-neutral-300 px-3 py-2">
+        <option value="">Vyber e-shop</option>
+        ${storeOptions}
+      </select>
+    </div>
+    <div class="col-span-4">
+      <label class="block text-sm mb-1">Role</label>
+      <select class="assignment-role w-full rounded-xl border border-neutral-300 px-3 py-2">
+        <option value="viewer" ${values.role === 'viewer' ? 'selected' : ''}>viewer</option>
+        <option value="editor" ${values.role === 'editor' ? 'selected' : ''}>editor</option>
+        <option value="manager" ${values.role === 'manager' ? 'selected' : ''}>manager</option>
+        <option value="admin" ${values.role === 'admin' ? 'selected' : ''}>admin</option>
+      </select>
+    </div>
+    <div class="col-span-2">
+      <button type="button" class="remove-assignment-btn w-full px-3 py-2 rounded-lg border border-red-200 bg-red-50 text-red-700 hover:bg-red-100">Smazat</button>
+    </div>
+  `;
+
+  row.querySelector('.remove-assignment-btn').addEventListener('click', () => {
+    row.remove();
+    ensureAtLeastOneAssignmentRow();
+  });
+
+  return row;
+}
+
+function ensureAtLeastOneAssignmentRow() {
+  const wrap = el('assignmentRows');
+  if (!wrap.children.length) {
+    wrap.appendChild(createAssignmentRow());
+  }
+}
+
+function openNewStoreModal() {
+  el('storeModalTitle').textContent = 'Nový e-shop';
+  el('storeForm').reset();
+  el('store_id').value = '';
+  el('store_is_active').checked = true;
+  el('storeFormError').textContent = '';
+  el('storeAdvancedWrap').classList.add('hidden');
+  openModal('storeModal');
+}
+
+async function openEditStoreModal(storeId) {
+  const store = state.stores.find(item => Number(item.id) === Number(storeId));
+  if (!store) {
+    toast('Store nebyl nalezen.', 'error');
+    return;
+  }
+
+  el('storeModalTitle').textContent = 'Nastavení e-shopu';
+  el('store_id').value = String(store.id);
+  el('store_name').value = store.name || '';
+  el('store_code').value = store.code || '';
+  el('store_logo_url').value = store.logo_url || '';
+  el('store_is_active').checked = Boolean(Number(store.is_active));
+  el('storeFormError').textContent = '';
+  el('storeAdvancedWrap').classList.remove('hidden');
+  await loadStoreSettings(storeId);
+  await loadStoreBackups(storeId);
+  openModal('storeModal');
+}
+
+function openNewUserModal() {
+  el('userForm').reset();
+  el('userFormError').textContent = '';
+  const rows = el('assignmentRows');
+  rows.innerHTML = '';
+  rows.appendChild(createAssignmentRow());
+  openModal('userModal');
+}
+
+async function loadUsers() {
+  if (!isSuperadmin()) {
+    renderUsers();
+    return;
+  }
+
+  state.loadingUsers = true;
+  renderUsers();
+
+  try {
+    const response = await api('/api/v2/users');
+    state.users = Array.isArray(response.data) ? response.data : [];
+    renderUsers();
+  } catch (err) {
+    toast(err.message || 'Načtení uživatelů selhalo.', 'error');
+    state.users = [];
+    renderUsers();
+  } finally {
+    state.loadingUsers = false;
+    renderUsers();
+  }
+}
+
+async function loadStores() {
+  const stores = await api('/api/v2/stores');
+  state.stores = Array.isArray(stores.data) ? stores.data : (stores.data?.items || []);
+}
+
+async function loadConnections() {
+  const connections = await api('/api/v2/woo-connections');
+  const rows = connections.data || {};
+  if (Array.isArray(rows)) {
+    state.connections = rows.reduce((acc, item) => { acc[String(item.store_id)] = item; return acc; }, {});
+  } else {
+    state.connections = rows;
+  }
+}
+
+function openWooModal(storeId) {
+  const store = state.stores.find(item => Number(item.id) === Number(storeId));
+  if (!store) {
+    toast('E-shop nebyl nalezen.', 'error');
+    return;
+  }
+
+  const connection = state.connections[String(storeId)] || state.connections[storeId] || null;
+  el('wooModalTitle').textContent = `WooCommerce · ${store.name || 'e-shop'}`;
+  el('woo_store_id').value = String(storeId);
+  el('woo_wp_base_url').value = connection?.wp_base_url || '';
+  el('woo_plugin_token').value = '';
+  el('woo_plugin_token').placeholder = connection?.token_configured ? 'Token je bezpečně uložen – vyplň jen při změně' : 'Vlož token z pluginu Viki Connector';
+  el('wooFormError').textContent = '';
+  renderWooConnectionState(connection);
+  openModal('wooModal');
+}
+
+async function saveWooConnection() {
+  const storeId = Number(el('woo_store_id').value || 0);
+  const payload = {
+    wp_base_url: el('woo_wp_base_url').value.trim(),
+    plugin_token: el('woo_plugin_token').value.trim()
+  };
+  el('wooFormError').textContent = '';
+  try {
+    const response = await api(`/api/v2/stores/${storeId}/woo-connection`, {
+      method: 'PUT',
+      body: JSON.stringify(payload)
+    });
+    state.connections[String(storeId)] = response.data;
+    renderProfile();
+    renderWooConnectionState(response.data);
+    toast('Připojení WooCommerce bylo uloženo.', 'success');
+  } catch (err) {
+    el('wooFormError').textContent = err.message || 'Uložení připojení selhalo.';
+  }
+}
+
+async function discoverWooConnection() {
+  const storeId = Number(el('woo_store_id').value || 0);
+  el('wooFormError').textContent = '';
+  try {
+    const response = await api(`/api/v2/stores/${storeId}/woo-discover`, { method: 'POST' });
+    state.connections[String(storeId)] = response.data.connection;
+    renderProfile();
+    renderWooConnectionState(response.data.connection);
+    toast('Připojení WooCommerce bylo ověřeno.', 'success');
+  } catch (err) {
+    el('wooFormError').textContent = err.message || 'Ověření připojení selhalo.';
+  }
+}
+
+function setImportProgress(percent, status, meta = '') {
+  el('importProgressBar').style.width = `${Math.max(6, Math.min(100, percent))}%`;
+  el('importProgressStatus').textContent = status;
+  el('importProgressMeta').textContent = meta;
+}
+
+function openImportProgress(sourceLabel = 'WooCommerce plugin API') {
+  el('importProgressSource').textContent = `Zdroj: ${sourceLabel}`;
+  setImportProgress(8, 'Připravuji import…', 'Kontroluji připojení a stav katalogu.');
+  openModal('importProgressModal');
+}
+
+async function loadStoreSettings(storeId) {
+  const response = await api(`/api/v2/stores/${storeId}/settings`);
+  const settings = response.data || {};
+  state.storeSettings[String(storeId)] = settings;
+  el('settings_source_type').value = settings.source_type || 'woocommerce';
+  el('settings_sync_interval_minutes').value = Number(settings.sync_interval_minutes || 60);
+  el('settings_prices_include_tax').value = settings.prices_include_tax || 'yes';
+  el('settings_tax_rates').value = settings.tax_rates || '';
+  el('settings_notes').value = settings.notes || '';
+  el('settingsUpdatedAt').textContent = settings.updated_at || '—';
+}
+
+function renderBackupList(storeId) {
+  const items = state.backups[String(storeId)] || [];
+  const wrap = el('backupList');
+  if (!items.length) {
+    wrap.innerHTML = '<div class="rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-3 text-neutral-500">Zatím tu nejsou žádné zálohy.</div>';
+    return;
+  }
+
+  wrap.innerHTML = items.map(item => `
+    <div class="rounded-xl border border-neutral-200 px-3 py-3 flex items-center justify-between gap-4">
+      <div>
+        <div class="font-medium">${escapeHtml(item.created_at || '')}</div>
+        <div class="text-neutral-500 mt-1">Typ: ${escapeHtml(item.type || 'manual')} · Produkty: ${Number(item.products || 0)} · Kategorie: ${Number(item.categories || 0)}</div>
+        <div class="text-neutral-400 mt-1">${escapeHtml(item.note || '')}</div>
+      </div>
+      <button type="button" class="restore-backup-btn px-3 py-2 rounded-lg border border-neutral-300 bg-white" data-store-id="${storeId}" data-backup-id="${escapeHtml(item.backup_id || '')}">Obnovit</button>
+    </div>`).join('');
+
+  document.querySelectorAll('.restore-backup-btn').forEach(btn => {
+    btn.addEventListener('click', () => restoreStoreBackup(Number(btn.dataset.storeId), btn.dataset.backupId || ''));
+  });
+}
+
+async function loadStoreBackups(storeId) {
+  const response = await api(`/api/v2/stores/${storeId}/backups`);
+  state.backups[String(storeId)] = Array.isArray(response.data) ? response.data : [];
+  renderBackupList(storeId);
+}
+
+async function createManualBackup(storeId) {
+  const response = await api(`/api/v2/stores/${storeId}/backups`, {
+    method: 'POST',
+    body: JSON.stringify({ type: 'manual', note: 'Ruční záloha z nastavení e-shopu' })
+  });
+  toast('Záloha byla vytvořena.', 'success');
+  await loadStoreBackups(storeId);
+  await loadConnections();
+  renderProfile();
+  return response.data;
+}
+
+async function restoreStoreBackup(storeId, backupId) {
+  if (!confirm('Obnova zálohy přepíše aktuální katalog e-shopu. Pokračovat?')) return;
+  await api(`/api/v2/stores/${storeId}/backups/restore`, {
+    method: 'POST',
+    body: JSON.stringify({ backup_id: backupId })
+  });
+  toast('Záloha byla obnovena.', 'success');
+  await Promise.all([loadStoreBackups(storeId), loadConnections()]);
+  renderProfile();
+}
+
+async function startStoreImport(storeId) {
+  const connection = state.connections[String(storeId)] || null;
+  if (!connection || !connection.wp_base_url || !connection.token_configured) {
+    toast('Nejdřív dokonči připojení WooCommerce.', 'error');
+    return;
+  }
+  if (state.importRunning) return;
+  if (!confirm('První import provede kompletní přepis katalogu vybraného e-shopu. Pokud katalog již obsahuje položky, před importem se automaticky vytvoří záloha. Pokračovat?')) {
+    return;
+  }
+
+  state.importRunning = true;
+  openImportProgress('WooCommerce plugin API');
+  setImportProgress(15, 'Vytvářím bezpečnostní zálohu…', 'Pokud katalog není prázdný, vytvoří se automatický snapshot.');
+  try {
+    setTimeout(() => setImportProgress(45, 'Stahuji data z WooCommerce…', 'Načítám kategorie a produkty z pluginu.'), 250);
+    setTimeout(() => setImportProgress(75, 'Zapisuji katalog do aplikace…', 'Probíhá kompletní přepis katalogu e-shopu.'), 800);
+    const response = await api(`/api/v2/stores/${storeId}/woo-import`, { method: 'POST' });
+    state.connections[String(storeId)] = response.data.connection;
+    await loadConnections();
+    if (el('woo_store_id').value === String(storeId)) {
+      renderWooConnectionState(state.connections[String(storeId)]);
+    }
+    await loadStoreBackups(storeId).catch(() => null);
+    renderProfile();
+    setImportProgress(100, 'Import dokončen', `Kategorie: ${response.data.imported.categories} · Produkty: ${response.data.imported.products}${response.data.backup ? ' · Záloha: ' + response.data.backup.created_at : ''}`);
+    toast(`Import hotov: ${response.data.imported.categories} kategorií / ${response.data.imported.products} produktů.`, 'success');
+  } catch (err) {
+    setImportProgress(100, 'Import selhal', err.message || 'První import selhal.');
+    el('wooFormError').textContent = err.message || 'První import selhal.';
+  } finally {
+    state.importRunning = false;
+  }
+}
+
+async function loadMe() {
+  const me = await api('/api/v2/auth/me');
+  state.me = me.data;
+}
+
+async function bootstrap() {
+  if (!state.token) {
+    el('loginRequired').classList.remove('hidden');
+    el('appView').classList.add('hidden');
+    return;
+  }
+
+  try {
+    await Promise.all([loadMe(), loadStores(), loadConnections()]);
+    el('loginRequired').classList.add('hidden');
+    el('appView').classList.remove('hidden');
+    renderProfile();
+    renderUsers();
+    const requestedTab = location.hash.replace('#', '');
+    if (['profile', 'users', 'stores', 'companies', 'access'].includes(requestedTab)) setTab(requestedTab);
+  } catch (err) {
+    el('appView').classList.add('hidden');
+    el('loginRequired').classList.remove('hidden');
+    toast(err.message || 'Načtení account stránky selhalo.', 'error');
+  }
+}
+
+async function handleStoreSubmit(event) {
+  event.preventDefault();
+
+  const storeId = Number(el('store_id').value || 0);
+  const payload = {
+    name: el('store_name').value.trim(),
+    code: normalizeStoreCode(el('store_code').value),
+    logo_url: el('store_logo_url').value.trim() || null,
+    is_active: el('store_is_active').checked
+  };
+
+  el('storeFormError').textContent = '';
+
+  if (!payload.name || !payload.code) {
+    el('storeFormError').textContent = 'Název a kód e-shopu jsou povinné.';
+    return;
+  }
+
+  const submitBtn = el('storeSubmitBtn');
+  const originalLabel = submitBtn.textContent;
+  submitBtn.disabled = true;
+  submitBtn.textContent = 'Ukládám...';
+
+  try {
+    if (storeId > 0) {
+      await api(`/api/v2/stores/${storeId}`, {
+        method: 'PUT',
+        body: JSON.stringify(payload)
+      });
+      if (storeId > 0) {
+        await api(`/api/v2/stores/${storeId}/settings`, {
+          method: 'PUT',
+          body: JSON.stringify({
+            source_type: el('settings_source_type')?.value || 'woocommerce',
+            sync_interval_minutes: Number(el('settings_sync_interval_minutes')?.value || 60),
+            prices_include_tax: el('settings_prices_include_tax')?.value || 'yes',
+            tax_rates: el('settings_tax_rates')?.value || '',
+            notes: el('settings_notes')?.value || ''
+          })
+        }).catch(() => null);
+      }
+      toast('E-shop byl upraven.', 'success');
+    } else {
+      await api('/api/v2/stores', {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      });
+      toast('E-shop byl vytvořen.', 'success');
+    }
+
+    await loadStores();
+    await loadConnections();
+    renderProfile();
+    closeModal('storeModal');
+  } catch (err) {
+    el('storeFormError').textContent = err.message || 'Uložení e-shopu selhalo.';
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.textContent = originalLabel;
+  }
+}
+
+function collectAssignments() {
+  const rows = Array.from(document.querySelectorAll('.assignment-row'));
+  return rows
+    .map(row => ({
+      store_id: Number(row.querySelector('.assignment-store').value || 0),
+      role: String(row.querySelector('.assignment-role').value || 'viewer')
+    }))
+    .filter(item => item.store_id > 0);
+}
+
+async function handleUserSubmit(event) {
+  event.preventDefault();
+
+  const payload = {
+    full_name: el('user_full_name').value.trim(),
+    email: el('user_email').value.trim(),
+    password: el('user_password').value,
+    is_active: el('user_is_active').checked,
+    assignments: collectAssignments()
+  };
+
+  el('userFormError').textContent = '';
+
+  if (!payload.email || !payload.password) {
+    el('userFormError').textContent = 'E-mail a heslo jsou povinné.';
+    return;
+  }
+
+  if (payload.assignments.length === 0) {
+    el('userFormError').textContent = 'Přidej alespoň jedno přiřazení k e-shopu.';
+    return;
+  }
+
+  const duplicateStoreIds = payload.assignments.map(a => a.store_id);
+  if (new Set(duplicateStoreIds).size !== duplicateStoreIds.length) {
+    el('userFormError').textContent = 'Každý e-shop přidej jen jednou.';
+    return;
+  }
+
+  const submitBtn = el('userSubmitBtn');
+  const originalLabel = submitBtn.textContent;
+  submitBtn.disabled = true;
+  submitBtn.textContent = 'Vytvářím...';
+
+  try {
+    await api('/api/v2/users', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+
+    toast('Uživatel byl vytvořen.', 'success');
+    closeModal('userModal');
+    await loadUsers();
+  } catch (err) {
+    el('userFormError').textContent = err.message || 'Vytvoření uživatele selhalo.';
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.textContent = originalLabel;
+  }
+}
+
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => setTab(btn.dataset.tab));
+});
+
+document.querySelectorAll('[data-close-modal]').forEach(btn => {
+  btn.addEventListener('click', () => closeModal(btn.dataset.closeModal));
+});
+
+el('refreshBtn').addEventListener('click', async () => {
+  await bootstrap();
+  toast('Data byla obnovena.', 'success');
+});
+
+el('logoutBtn').addEventListener('click', () => {
+  sessionStorage.removeItem(storageKeys.token);
+  window.location.href = './index.html';
+});
+
+el('newStoreBtn').addEventListener('click', openNewStoreModal);
+el('reloadStoresBtn').addEventListener('click', async () => {
+  try {
+    await loadStores();
+    await loadConnections();
+    renderProfile();
+    toast('Seznam e-shopů byl obnoven.', 'success');
+  } catch (err) {
+    toast(err.message || 'Načtení e-shopů selhalo.', 'error');
+  }
+});
+
+el('store_code').addEventListener('input', (event) => {
+  event.target.value = normalizeStoreCode(event.target.value);
+});
+
+el('storeForm').addEventListener('submit', handleStoreSubmit);
+
+el('reloadUsersBtn').addEventListener('click', async () => {
+  await loadUsers();
+});
+
+el('newUserBtn').addEventListener('click', () => {
+  if (!isSuperadmin()) {
+    toast('Nového uživatele může vytvořit pouze superadmin.', 'error');
+    return;
+  }
+  openNewUserModal();
+});
+
+el('addAssignmentBtn').addEventListener('click', () => {
+  el('assignmentRows').appendChild(createAssignmentRow());
+});
+
+el('userForm').addEventListener('submit', handleUserSubmit);
+
+el('saveProfileBtn').addEventListener('click', () => {
+  toast('Backend endpoint pro uložení profilu zatím není připraven.', 'info');
+});
+
+el('wooSaveBtn').addEventListener('click', saveWooConnection);
+el('wooDiscoverBtn').addEventListener('click', discoverWooConnection);
+
+window.addEventListener('keydown', (event) => {
+  if (event.key === 'Escape') {
+    closeModal('storeModal');
+    closeModal('userModal');
+    closeModal('wooModal');
+  }
+});
+
+bootstrap();
+</script>
+</body>
+</html>
